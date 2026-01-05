@@ -166,22 +166,21 @@ export default function Landing() {
             <a href="#features" className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
               Features
             </a>
-            <a href="#demo" className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
-              Demo
+            <a href="#contact" className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
+              Contact
+            </a>
+            <a
+              href="https://github.com/Jasper-Technology/site"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              GitHub
             </a>
           </div>
           
           {/* Right side */}
           <div className="flex items-center gap-2">
-            <a
-              href="https://github.com/Jasper-Technology/site"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
-              aria-label="View on GitHub"
-            >
-              <Github className="w-4 h-4" />
-            </a>
             <button
               onClick={toggle}
               className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
@@ -333,7 +332,7 @@ export default function Landing() {
       </section>
 
       {/* Contact Section */}
-      <section className="py-20 px-6 bg-slate-50 dark:bg-slate-800/30">
+      <section id="contact" className="py-20 px-6 bg-slate-50 dark:bg-slate-800/30">
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Left - Heading */}
