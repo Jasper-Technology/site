@@ -1,0 +1,388 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Figma-inspired light theme */
+    --background: 0 0% 96%;
+    --foreground: 220 15% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+    --primary: 259 85% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 10% 94%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 10% 96%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 259 70% 95%;
+    --accent-foreground: 259 85% 50%;
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 15%;
+    --info: 210 90% 55%;
+    --info-foreground: 0 0% 100%;
+    --border: 220 10% 90%;
+    --input: 220 10% 90%;
+    --ring: 259 85% 60%;
+    --radius: 1rem;
+    --canvas-bg: 0 0% 96%;
+    --canvas-grid: 220 10% 90%;
+    --canvas-dot: 220 10% 82%;
+    --stream-color: 259 60% 55%;
+    --unit-stroke: 220 15% 30%;
+    --unit-fill: 0 0% 100%;
+    --selection: 259 85% 60%;
+    
+    /* Island styling */
+    --island-bg: 0 0% 100%;
+    --island-border: 220 10% 88%;
+    --island-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+    --island-shadow-hover: 0 12px 40px -8px rgba(0, 0, 0, 0.16), 0 6px 20px -4px rgba(0, 0, 0, 0.1);
+  }
+
+  .dark {
+    --background: 228 15% 10%;
+    --foreground: 220 15% 95%;
+    --card: 228 15% 14%;
+    --card-foreground: 220 15% 95%;
+    --popover: 228 15% 14%;
+    --popover-foreground: 220 15% 95%;
+    --primary: 259 80% 65%;
+    --primary-foreground: 228 15% 8%;
+    --secondary: 228 12% 20%;
+    --secondary-foreground: 220 15% 90%;
+    --muted: 228 12% 18%;
+    --muted-foreground: 220 12% 55%;
+    --accent: 259 50% 25%;
+    --accent-foreground: 259 80% 70%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 145 50% 45%;
+    --warning: 38 85% 55%;
+    --info: 210 85% 60%;
+    --border: 228 12% 22%;
+    --input: 228 12% 22%;
+    --ring: 259 80% 65%;
+    --canvas-bg: 228 18% 8%;
+    --canvas-grid: 228 15% 14%;
+    --canvas-dot: 228 12% 22%;
+    --stream-color: 259 70% 60%;
+    --unit-stroke: 220 15% 75%;
+    --unit-fill: 228 15% 16%;
+    --selection: 259 80% 65%;
+    
+    --island-bg: 228 15% 14%;
+    --island-border: 228 12% 24%;
+    --island-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.5), 0 4px 16px -4px rgba(0, 0, 0, 0.4);
+    --island-shadow-hover: 0 12px 40px -8px rgba(0, 0, 0, 0.6), 0 6px 20px -4px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer components {
+  /* ========================== */
+  /* FIGMA-STYLE FLOATING ISLANDS */
+  /* ========================== */
+  
+  .island {
+    @apply bg-card border border-border transition-all duration-200;
+    border-radius: 16px;
+    box-shadow: var(--island-shadow);
+  }
+  
+  .island:hover {
+    box-shadow: var(--island-shadow-hover);
+  }
+  
+  .island-sm {
+    border-radius: 12px;
+  }
+  
+  .island-pill {
+    border-radius: 9999px;
+  }
+  
+  /* Collapsed island (just an icon button) */
+  .island-collapsed {
+    @apply w-12 h-12 flex items-center justify-center cursor-pointer;
+    border-radius: 14px;
+  }
+  
+  /* ========================== */
+  /* TOOLBAR BUTTONS */
+  /* ========================== */
+  
+  .toolbar-btn {
+    @apply relative flex items-center justify-center w-10 h-10 rounded-xl text-muted-foreground 
+           hover:text-foreground hover:bg-muted/60 transition-all duration-150 active:scale-95;
+  }
+  
+  .toolbar-btn-active {
+    @apply text-primary bg-primary/10;
+  }
+  
+  .toolbar-btn-lg {
+    @apply w-12 h-12;
+  }
+  
+  .toolbar-divider {
+    @apply w-px h-8 bg-border mx-1;
+  }
+  
+  /* ========================== */
+  /* TAB NAVIGATION */
+  /* ========================== */
+  
+  .tab-btn {
+    @apply px-4 py-2 text-xs font-medium text-muted-foreground rounded-lg
+           hover:text-foreground hover:bg-muted/50 transition-all duration-150;
+  }
+  
+  .tab-btn-active {
+    @apply text-foreground bg-muted;
+  }
+  
+  /* Segmented control style */
+  .segment-control {
+    @apply flex p-1 bg-muted/50 rounded-xl gap-1;
+  }
+  
+  .segment-btn {
+    @apply flex-1 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground 
+           rounded-lg transition-all duration-150 hover:text-foreground;
+  }
+  
+  .segment-btn-active {
+    @apply bg-card text-foreground shadow-sm;
+  }
+  
+  /* ========================== */
+  /* STATUS BADGES */
+  /* ========================== */
+  
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide rounded-full;
+  }
+  
+  .badge-default { @apply bg-muted text-muted-foreground; }
+  .badge-primary { @apply bg-primary/15 text-primary; }
+  .badge-success { @apply bg-success/15 text-success; }
+  .badge-warning { @apply bg-warning/15 text-warning; }
+  .badge-destructive { @apply bg-destructive/15 text-destructive; }
+  
+  .badge-dot {
+    @apply w-1.5 h-1.5 rounded-full;
+  }
+  
+  /* ========================== */
+  /* PFD CANVAS */
+  /* ========================== */
+  
+  .canvas-container {
+    @apply absolute inset-0;
+    background-color: hsl(var(--canvas-bg));
+    background-image: radial-gradient(circle, hsl(var(--canvas-dot)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  
+  .unit-op {
+    @apply cursor-pointer transition-all duration-150;
+  }
+  
+  .unit-op-selected {
+    filter: drop-shadow(0 0 12px hsl(var(--selection) / 0.5));
+  }
+  
+  /* ========================== */
+  /* FORM ELEMENTS */
+  /* ========================== */
+  
+  .input {
+    @apply w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-lg
+           text-foreground placeholder:text-muted-foreground
+           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50
+           transition-all duration-150;
+  }
+  
+  .input-sm {
+    @apply px-2.5 py-1.5 text-xs rounded-md;
+  }
+  
+  .label {
+    @apply block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5;
+  }
+  
+  /* ========================== */
+  /* BUTTONS */
+  /* ========================== */
+  
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-xl
+           transition-all duration-150 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+  
+  .btn-ghost {
+    @apply text-muted-foreground hover:text-foreground hover:bg-muted/50;
+  }
+  
+  .btn-icon {
+    @apply p-2 rounded-xl;
+  }
+  
+  /* ========================== */
+  /* LIST ITEMS */
+  /* ========================== */
+  
+  .list-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
+           hover:bg-muted/50 transition-all duration-150 cursor-pointer;
+  }
+  
+  .list-item-active {
+    @apply bg-primary/10 text-primary;
+  }
+  
+  /* ========================== */
+  /* SCROLLBAR */
+  /* ========================== */
+  
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/30;
+  }
+  
+  /* Hide scrollbar but keep functionality */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* ========================== */
+  /* ANIMATIONS */
+  /* ========================== */
+  
+  @keyframes island-enter {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  @keyframes island-exit {
+    from {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95) translateY(8px);
+    }
+  }
+  
+  .island-animate-in {
+    animation: island-enter 0.2s ease-out;
+  }
+  
+  .island-animate-out {
+    animation: island-exit 0.15s ease-in;
+  }
+  
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+  
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+  
+  /* ========================== */
+  /* TOOLTIP */
+  /* ========================== */
+  
+  .tooltip {
+    @apply absolute z-50 px-2 py-1 text-xs font-medium bg-foreground text-background rounded-md
+           pointer-events-none opacity-0 transition-opacity duration-150;
+  }
+  
+  .tooltip-visible {
+    @apply opacity-100;
+  }
+  
+  /* ========================== */
+  /* EMPTY STATES */
+  /* ========================== */
+  
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+  
+  .empty-state-icon {
+    @apply w-12 h-12 text-muted-foreground/30 mb-3;
+  }
+  
+  .empty-state-title {
+    @apply text-sm font-semibold text-muted-foreground mb-1;
+  }
+  
+  .empty-state-desc {
+    @apply text-xs text-muted-foreground/70;
+  }
+}
