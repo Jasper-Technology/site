@@ -14,6 +14,9 @@ Jasper is a web-based integrated development environment specifically designed f
 - **Version Control**: Save snapshots of your designs at key milestones
 - **Run History**: Track simulation results, violations, and KPI trends
 
+## Why Jasper?
+Traditional process simulators like AspenPlus are powerful but assume deep expertise and provide cryptic feedback that makes early-stage learning and conceptual design difficult. Jasper fills this gap by offering a clear, interactive, and transparent environment for exploring flowsheets, constraints, and economics — especially for students and researchers.
+
 ## Features
 
 ### Core Functionality
