@@ -14,6 +14,7 @@ import {
   listActions,
   getCurrentUser,
   setCurrentUser,
+  getStorageInfo,
 } from './storage';
 import type {
   JasperProject,
@@ -82,5 +83,8 @@ export const api = {
     appendAction(entry);
     return Promise.resolve();
   },
+
+  // Storage utilities
+  getStorageInfo: () => Promise.resolve(getStorageInfo()),
 };
 

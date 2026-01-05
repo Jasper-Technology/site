@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../data/api';
 import { createBlankTemplate, createDEACO2CaptureTemplate } from '../../data/seed';
 import { useAuthStore } from '../../store/authStore';
+import { getStorageInfo } from '../../data/storage';
 import { 
   Plus, 
   FolderOpen, 
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [template, setTemplate] = useState<'blank' | 'dea'>('blank');
   const [projectName, setProjectName] = useState('');
+  const [storageSize, setStorageSize] = useState<number>(0);
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -38,6 +40,19 @@ export default function Dashboard() {
   });
   
   const hasReachedLimit = projects.length >= MAX_PROJECTS;
+
+  // Monitor storage usage
+  useEffect(() => {
+    const updateStorage = () => {
+      const { totalSize } = getStorageInfo();
+      setStorageSize(totalSize);
+    };
+    
+    updateStorage();
+    const interval = setInterval(updateStorage, 5000); // Update every 5 seconds
+    
+    return () => clearInterval(interval);
+  }, [projects]);
 
   const createMutation = useMutation({
     mutationFn: (name: string) => {
@@ -80,6 +95,12 @@ export default function Dashboard() {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const formatBytes = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   };
 
   const getStatusConfig = (status: string) => {
@@ -141,12 +162,17 @@ export default function Dashboard() {
             <h1 className="text-3xl font-light tracking-tight text-slate-800 dark:text-white mb-2">
               Your Projects
             </h1>
-            <p className="text-slate-500 dark:text-slate-400">
-              {hasReachedLimit 
-                ? `Project limit reached (${projects.length}/${MAX_PROJECTS})`
-                : 'Design, simulate, and optimize chemical processes'
-              }
-            </p>
+            <div className="flex items-center gap-4">
+              <p className="text-slate-500 dark:text-slate-400">
+                {hasReachedLimit 
+                  ? `Project limit reached (${projects.length}/${MAX_PROJECTS})`
+                  : 'Design, simulate, and optimize chemical processes'
+                }
+              </p>
+              <span className="text-xs text-slate-400 dark:text-slate-500 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
+                Storage: {formatBytes(storageSize)}
+              </span>
+            </div>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
