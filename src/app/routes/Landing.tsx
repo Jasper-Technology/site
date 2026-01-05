@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, LineChart, Cpu, Shield, Moon, Sun, Sparkles, Github, Code } from 'lucide-react';
+import { ArrowRight, Zap, LineChart, Cpu, Shield, Moon, Sun, Sparkles, Github, Code, Mail, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // Minimalist Jasper Logo
@@ -211,26 +211,10 @@ export default function Landing() {
               </h1>
               
               {/* Subheadline */}
-              <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed mb-6 max-w-lg">
+              <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed mb-10 max-w-lg">
                 Design, simulate, and optimize process flowsheets with an intuitive visual interface.
                 Built for chemical engineers who value precision and speed.
               </p>
-              
-              {/* Open Source Badge */}
-              <div className="flex items-center gap-3 mb-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full">
-                  <Code className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Open Source</span>
-                </div>
-                <a
-                  href="https://github.com/Jasper-Technology/site"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-colors underline underline-offset-2"
-                >
-                  Contribute on GitHub →
-                </a>
-              </div>
               
               {/* CTA Button */}
               <Link
@@ -324,13 +308,106 @@ export default function Landing() {
           <p className="text-slate-500 dark:text-slate-400 text-lg mb-10">
             Start designing your process flowsheets today.
           </p>
-          <Link
-            to="/signin"
-            className="inline-flex items-center gap-2 px-8 py-4 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors"
-          >
-            Get started for free
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              to="/signin"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors"
+            >
+              Get started for free
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            
+            <a
+              href="https://github.com/Jasper-Technology/site"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+            >
+              <Github className="w-5 h-5" />
+              Contribute on GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20 px-6 bg-slate-50 dark:bg-slate-800/30">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Heading */}
+            <div>
+              <h2 className="text-3xl md:text-4xl font-light text-slate-800 dark:text-white tracking-tight mb-4">
+                Send us a message
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 text-lg">
+                Have questions, feedback, or want to collaborate? We'd love to hear from you.
+              </p>
+            </div>
+            
+            {/* Right - Form */}
+            <form
+              action="https://formspree.io/f/xqeajwgw"
+              method="POST"
+              className="bg-white dark:bg-slate-800/50 rounded-3xl p-6 border border-slate-200 dark:border-slate-700"
+            >
+              <div className="space-y-4">
+                {/* Name & Email - side by side */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="name" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-transparent transition-all"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="email" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-transparent transition-all"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                </div>
+                
+                {/* Message */}
+                <div>
+                  <label htmlFor="message" className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    required
+                    rows={4}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 focus:border-transparent transition-all resize-none"
+                    placeholder="Tell us what's on your mind..."
+                  />
+                </div>
+                
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 transition-colors"
+                >
+                  Send Message
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </section>
 
@@ -341,7 +418,7 @@ export default function Landing() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <JasperLogo className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                <span className="text-sm text-slate-400 dark:text-slate-500">© 2025 Jasper</span>
+                <span className="text-sm text-slate-400 dark:text-slate-500">© 2026 JasperTech</span>
               </div>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <a
