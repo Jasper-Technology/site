@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { JasperLogo, useTheme } from './Landing';
 
+const MAX_PROJECTS = 2; // Project limit to manage memory
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -34,6 +36,8 @@ export default function Dashboard() {
     queryKey: ['projects'],
     queryFn: () => api.listProjects(),
   });
+  
+  const hasReachedLimit = projects.length >= MAX_PROJECTS;
 
   const createMutation = useMutation({
     mutationFn: (name: string) => {
@@ -59,7 +63,7 @@ export default function Dashboard() {
   });
 
   const handleCreate = () => {
-    if (projectName.trim()) {
+    if (projectName.trim() && !hasReachedLimit) {
       createMutation.mutate(projectName.trim());
     }
   };
@@ -138,12 +142,17 @@ export default function Dashboard() {
               Your Projects
             </h1>
             <p className="text-slate-500 dark:text-slate-400">
-              Design, simulate, and optimize chemical processes
+              {hasReachedLimit 
+                ? `Project limit reached (${projects.length}/${MAX_PROJECTS})`
+                : 'Design, simulate, and optimize chemical processes'
+              }
             </p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
+            disabled={hasReachedLimit}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={hasReachedLimit ? `Maximum ${MAX_PROJECTS} projects allowed` : 'Create a new project'}
           >
             <Plus className="w-4 h-4" />
             New Project
@@ -162,7 +171,8 @@ export default function Dashboard() {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors"
+              disabled={hasReachedLimit}
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-4 h-4" />
               Create your first project
@@ -226,17 +236,19 @@ export default function Dashboard() {
             })}
             
             {/* Quick create card */}
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="rounded-2xl p-5 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 bg-transparent hover:bg-teal-50/50 dark:hover:bg-teal-900/20 transition-all duration-200 flex flex-col items-center justify-center min-h-[200px] group"
-            >
-              <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 flex items-center justify-center mb-3 transition-colors">
-                <Plus className="w-6 h-6 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
-              </div>
-              <span className="text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
-                New project
-              </span>
-            </button>
+            {!hasReachedLimit && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="rounded-2xl p-5 border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-teal-300 dark:hover:border-teal-600 bg-transparent hover:bg-teal-50/50 dark:hover:bg-teal-900/20 transition-all duration-200 flex flex-col items-center justify-center min-h-[200px] group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 flex items-center justify-center mb-3 transition-colors">
+                  <Plus className="w-6 h-6 text-slate-400 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors" />
+                </div>
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200 transition-colors">
+                  New project
+                </span>
+              </button>
+            )}
           </div>
         )}
       </main>
