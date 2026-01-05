@@ -125,7 +125,9 @@ const HeroDiagram = () => (
 function useTheme() {
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark');
+      const savedTheme = localStorage.getItem('jasper-theme');
+      // Default to light mode if no preference is saved
+      return savedTheme === 'dark';
     }
     return false;
   });
