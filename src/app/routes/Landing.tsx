@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, LineChart, Cpu, Shield, Moon, Sun, Sparkles, Github, Code, Mail, Send } from 'lucide-react';
+import { ArrowRight, LineChart, Cpu, Shield, Moon, Sun, Sparkles, Github, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // Minimalist Jasper Logo
