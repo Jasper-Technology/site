@@ -20,7 +20,7 @@ interface SideNavProps {
 }
 
 export default function SideNav({ projectId, onVersionSelect, onRunSelect }: SideNavProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Collapsed by default
   const [activeTab, setActiveTab] = useState<'versions' | 'runs'>('versions');
 
   const { data: versions = [] } = useQuery({

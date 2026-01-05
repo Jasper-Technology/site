@@ -54,7 +54,7 @@ export default function Inspector({
   latestRunId,
 }: InspectorProps) {
   const [activeTab, setActiveTab] = useState('node');
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true); // Collapsed by default
   const [expanded, setExpanded] = useState(false);
 
   // Auto-switch to relevant tab when selection changes
