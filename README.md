@@ -59,8 +59,8 @@ Jasper is a web-based integrated development environment specifically designed f
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd JasperAI
+git clone https://github.com/Jasper-Technology/site.git
+cd site
 ```
 
 2. Install dependencies:
@@ -167,10 +167,58 @@ npm run lint
 - [ ] Multi-user collaboration
 - [ ] Cloud persistence
 
-## License
-
-[Your License Here]
-
 ## Contributing
 
-[Contributing Guidelines Here]
+We welcome contributions from the community! Jasper is an open-source project built for chemical engineers, by chemical engineers.
+
+### How to Contribute
+
+1. **Fork the repository** on GitHub
+2. **Clone your fork** locally
+3. **Create a new branch** for your feature or fix: `git checkout -b feature/your-feature-name`
+4. **Make your changes** and commit them with clear, descriptive messages
+5. **Push to your fork**: `git push origin feature/your-feature-name`
+6. **Open a Pull Request** on the main repository
+
+### Areas We Need Help
+
+- **Simulation Engine**: Integrate open-source chemical engineering libraries (DWSIM, Cantera, etc.)
+- **Unit Operations**: Add more unit operation types and improve existing ones
+- **UI/UX**: Enhance the design, improve accessibility, and fix bugs
+- **Documentation**: Write guides, tutorials, and improve inline documentation
+- **Testing**: Add unit tests, integration tests, and end-to-end tests
+- **Performance**: Optimize rendering, state management, and simulation speed
+
+### Development Guidelines
+
+- Follow the existing code style and conventions
+- Write clear commit messages
+- Update documentation for any changed functionality
+- Test your changes thoroughly before submitting
+- Keep PRs focused and atomic (one feature or fix per PR)
+
+### Code of Conduct
+
+Be respectful, constructive, and professional. We're all here to build something great together.
+
+### Questions?
+
+- Open an issue on GitHub
+- Start a discussion in the repository
+- Check existing issues and pull requests
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+Copyright (c) 2025 Jasper Technology
+
+## Acknowledgments
+
+Built with modern web technologies:
+- React Flow for the visual canvas
+- TailwindCSS for beautiful, responsive design
+- Zod for type-safe schemas
+- And many other amazing open-source libraries
+
+Special thanks to the chemical engineering community for inspiration and feedback.
