@@ -211,7 +211,7 @@ Be respectful, constructive, and professional. We're all here to build something
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-Copyright (c) 2025 Jasper Technology
+Copyright (c) 2026 Jasper Technology
 
 ## Acknowledgments
 
