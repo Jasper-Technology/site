@@ -26,7 +26,7 @@ interface ConsoleDrawerProps {
 export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerProps) {
   const [collapsed, setCollapsed] = useState(true);
   const [expanded, setExpanded] = useState(false);
-  const [activeView, setActiveView] = useState<'summary' | 'kpis' | 'violations'>('summary');
+  const [activeView, setActiveView] = useState<'summary' | 'kpis' | 'streams' | 'violations'>('summary');
 
   const { data: runs = [] } = useQuery({
     queryKey: ['runs', projectId],
@@ -166,6 +166,12 @@ export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerP
           className={`tab-btn ${activeView === 'kpis' ? 'tab-btn-active' : ''}`}
         >
           KPIs
+        </button>
+        <button
+          onClick={() => setActiveView('streams')}
+          className={`tab-btn ${activeView === 'streams' ? 'tab-btn-active' : ''}`}
+        >
+          Streams
         </button>
         <button
           onClick={() => setActiveView('violations')}
@@ -315,6 +321,81 @@ export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerP
                 </span>
               </div>
             ))}
+          </div>
+        )}
+
+        {activeView === 'streams' && (
+          <div className="overflow-x-auto">
+            {latestRun.rawOutputs?.streams && Array.isArray(latestRun.rawOutputs.streams) && latestRun.rawOutputs.streams.length > 0 ? (
+              <div className="min-w-full">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Stream Results Table
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b-2 border-border">
+                        <th className="text-left py-2 px-2 font-semibold text-foreground">Stream</th>
+                        <th className="text-right py-2 px-2 font-semibold text-foreground">T (K)</th>
+                        <th className="text-right py-2 px-2 font-semibold text-foreground">P (bar)</th>
+                        <th className="text-right py-2 px-2 font-semibold text-foreground">Flow (kmol/h)</th>
+                        <th className="text-center py-2 px-2 font-semibold text-foreground">Phase</th>
+                        <th className="text-right py-2 px-2 font-semibold text-foreground">H (kJ/mol)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {latestRun.rawOutputs.streams.map((stream: any, idx: number) => (
+                        <tr key={stream.id || idx} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="py-2 px-2 font-medium text-foreground">{stream.name}</td>
+                          <td className="text-right py-2 px-2 font-mono text-muted-foreground">{stream.T?.toFixed(1) || '-'}</td>
+                          <td className="text-right py-2 px-2 font-mono text-muted-foreground">{stream.P?.toFixed(2) || '-'}</td>
+                          <td className="text-right py-2 px-2 font-mono text-muted-foreground">{stream.flow?.toFixed(1) || '-'}</td>
+                          <td className="text-center py-2 px-2">
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                              stream.phase === 'V' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                              stream.phase === 'L' ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400' :
+                              'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400'
+                            }`}>
+                              {stream.phase || '?'}
+                            </span>
+                          </td>
+                          <td className="text-right py-2 px-2 font-mono text-muted-foreground">{stream.H?.toFixed(1) || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Composition details */}
+                <div className="mt-4 space-y-3">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Composition Details
+                  </div>
+                  {latestRun.rawOutputs.streams.map((stream: any, idx: number) => {
+                    if (!stream.composition || Object.keys(stream.composition).length === 0) return null;
+                    return (
+                      <div key={stream.id || idx} className="bg-muted/20 rounded-lg p-3">
+                        <div className="font-medium text-foreground text-xs mb-2">{stream.name}</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          {Object.entries(stream.composition).map(([comp, frac]: [string, any]) => (
+                            <div key={comp} className="flex justify-between text-[11px]">
+                              <span className="text-muted-foreground">{comp}:</span>
+                              <span className="font-mono text-foreground">{(frac * 100).toFixed(2)}%</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="empty-state py-6">
+                <Activity className="empty-state-icon" />
+                <p className="empty-state-title">No stream data</p>
+                <p className="empty-state-desc">Stream results will appear here after simulation</p>
+              </div>
+            )}
           </div>
         )}
 

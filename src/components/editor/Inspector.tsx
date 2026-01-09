@@ -12,6 +12,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
+import { useEditorStore } from '../../store/editorStore';
 import NodePanel from './NodePanel';
 import StreamPanel from './StreamPanel';
 import SpecsPanel from './SpecsPanel';
@@ -53,6 +54,7 @@ export default function Inspector({
   selectedStreamId,
   latestRunId,
 }: InspectorProps) {
+  const { setSelectedStream } = useEditorStore();
   const [activeTab, setActiveTab] = useState('node');
   const [collapsed, setCollapsed] = useState(true); // Collapsed by default
   const [expanded, setExpanded] = useState(false);
@@ -185,6 +187,8 @@ export default function Inspector({
               project={project}
               onProjectChange={onProjectChange}
               streamId={selectedStreamId}
+              latestRunId={latestRunId}
+              onStreamSelect={(streamId) => setSelectedStream(streamId)}
             />
           )}
           {effectiveTab === 'specs' && (

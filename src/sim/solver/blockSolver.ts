@@ -190,6 +190,15 @@ function solveBlock(
     case 'Cooler':
       solveHeater(block, project, streams, results);
       break;
+    case 'Absorber':
+      solveAbsorber(block, project, streams, results);
+      break;
+    case 'Stripper':
+      solveStripper(block, project, streams, results);
+      break;
+    case 'HeatExchanger':
+      solveHeatExchangerSimple(block, project, streams, results);
+      break;
     default:
       // For unimplemented blocks, pass through
       passThrough(block, project, streams);
@@ -433,6 +442,223 @@ function solveHeater(
   });
 
   results.set(block.id, { duty, T_out });
+}
+
+/**
+ * Solve Absorber - CO2 absorption (simplified)
+ */
+function solveAbsorber(
+  block: UnitOpNode,
+  project: JasperProject,
+  streams: Map<string, StreamState>,
+  results: Map<string, any>
+) {
+  // Get inlets: gas-in and liquid-in
+  const gasInlet = project.flowsheet.edges.find(e => e.to.nodeId === block.id && e.to.portName === 'gas-in');
+  const liquidInlet = project.flowsheet.edges.find(e => e.to.nodeId === block.id && e.to.portName === 'liquid-in');
+  
+  if (!gasInlet || !liquidInlet) {
+    console.warn(`${block.name}: Missing gas or liquid inlet`);
+    return;
+  }
+
+  const gasIn = streams.get(gasInlet.id);
+  const liquidIn = streams.get(liquidInlet.id);
+  
+  if (!gasIn || !liquidIn) {
+    console.warn(`${block.name}: Inlet streams not solved`);
+    return;
+  }
+
+  // Simplified absorption model: 90% CO2 removal
+  const captureEfficiency = 0.90;
+  
+  // Gas outlet: CO2 removed
+  const gasOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'gas-out');
+  if (gasOutlet) {
+    const co2In = (gasIn.composition['CO2'] || 0) * gasIn.flow;
+    const co2Removed = co2In * captureEfficiency;
+    const co2Out = co2In - co2Removed;
+    
+    const totalOut = gasIn.flow - co2Removed;
+    
+    const gasOutComp: Record<string, number> = {};
+    for (const [comp, frac] of Object.entries(gasIn.composition)) {
+      if (comp === 'CO2') {
+        gasOutComp[comp] = co2Out / totalOut;
+      } else {
+        gasOutComp[comp] = (frac * gasIn.flow) / totalOut;
+      }
+    }
+    
+    streams.set(gasOutlet.id, {
+      id: gasOutlet.id,
+      name: gasOutlet.name,
+      T: gasIn.T + 5, // Slight temp rise from exothermic absorption
+      P: gasIn.P - 0.05, // Small pressure drop
+      flow: totalOut,
+      composition: gasOutComp,
+      phase: 'V' as const,
+      H: gasIn.H,
+    });
+  }
+
+  // Liquid outlet: absorbed CO2
+  const liquidOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'liquid-out');
+  if (liquidOutlet) {
+    const co2In = (gasIn.composition['CO2'] || 0) * gasIn.flow;
+    const co2Absorbed = co2In * captureEfficiency;
+    
+    const totalFlow = liquidIn.flow + co2Absorbed;
+    
+    const liquidOutComp: Record<string, number> = { ...liquidIn.composition };
+    liquidOutComp['CO2'] = ((liquidIn.composition['CO2'] || 0) * liquidIn.flow + co2Absorbed) / totalFlow;
+    
+    // Renormalize
+    const total = Object.values(liquidOutComp).reduce((sum, v) => sum + v, 0);
+    for (const comp in liquidOutComp) {
+      liquidOutComp[comp] /= total;
+    }
+    
+    streams.set(liquidOutlet.id, {
+      id: liquidOutlet.id,
+      name: liquidOutlet.name,
+      T: liquidIn.T + 10, // Temperature rise from absorption
+      P: liquidIn.P,
+      flow: totalFlow,
+      composition: liquidOutComp,
+      phase: 'L' as const,
+      H: liquidIn.H,
+    });
+  }
+
+  results.set(block.id, { captureEfficiency, co2Removed: (gasIn.composition['CO2'] || 0) * gasIn.flow * captureEfficiency });
+}
+
+/**
+ * Solve Stripper - CO2 regeneration (simplified)
+ */
+function solveStripper(
+  block: UnitOpNode,
+  project: JasperProject,
+  streams: Map<string, StreamState>,
+  results: Map<string, any>
+) {
+  const feedInlet = project.flowsheet.edges.find(e => e.to.nodeId === block.id && e.to.portName === 'feed');
+  
+  if (!feedInlet) {
+    console.warn(`${block.name}: No feed inlet`);
+    return;
+  }
+
+  const feed = streams.get(feedInlet.id);
+  if (!feed) {
+    console.warn(`${block.name}: Feed stream not solved`);
+    return;
+  }
+
+  // Regeneration: strip 95% of CO2
+  const stripEfficiency = 0.95;
+  const co2InFeed = (feed.composition['CO2'] || 0) * feed.flow;
+  const co2Stripped = co2InFeed * stripEfficiency;
+  
+  // Overhead: mostly CO2
+  const overheadOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'overhead');
+  if (overheadOutlet) {
+    streams.set(overheadOutlet.id, {
+      id: overheadOutlet.id,
+      name: overheadOutlet.name,
+      T: feed.T + 80, // Hot overhead vapor
+      P: (block.params.P as any)?.q?.value || feed.P,
+      flow: co2Stripped,
+      composition: { 'CO2': 0.995, 'H2O': 0.005 }, // Nearly pure CO2
+      phase: 'V' as const,
+      H: feed.H + 100,
+    });
+  }
+
+  // Bottoms: lean solvent
+  const bottomsOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'bottoms');
+  if (bottomsOutlet) {
+    const bottomsFlow = feed.flow - co2Stripped;
+    const bottomsComp: Record<string, number> = {};
+    
+    for (const [comp, frac] of Object.entries(feed.composition)) {
+      if (comp === 'CO2') {
+        bottomsComp[comp] = ((frac * feed.flow) - co2Stripped) / bottomsFlow;
+      } else {
+        bottomsComp[comp] = (frac * feed.flow) / bottomsFlow;
+      }
+    }
+    
+    streams.set(bottomsOutlet.id, {
+      id: bottomsOutlet.id,
+      name: bottomsOutlet.name,
+      T: feed.T + 70, // Hot lean solvent
+      P: (block.params.P as any)?.q?.value || feed.P,
+      flow: bottomsFlow,
+      composition: bottomsComp,
+      phase: 'L' as const,
+      H: feed.H + 80,
+    });
+  }
+
+  results.set(block.id, { stripEfficiency, co2Stripped });
+}
+
+/**
+ * Solve Heat Exchanger (simplified counter-current)
+ */
+function solveHeatExchangerSimple(
+  block: UnitOpNode,
+  project: JasperProject,
+  streams: Map<string, StreamState>,
+  results: Map<string, any>
+) {
+  // Hot side: in → out
+  const hotInlet = project.flowsheet.edges.find(e => e.to.nodeId === block.id && e.to.portName === 'in');
+  const hotOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'out');
+  
+  // Cold side: cold-in → cold-out
+  const coldInlet = project.flowsheet.edges.find(e => e.to.nodeId === block.id && e.to.portName === 'cold-in');
+  const coldOutlet = project.flowsheet.edges.find(e => e.from.nodeId === block.id && e.from.portName === 'cold-out');
+
+  if (!hotInlet || !hotOutlet || !coldInlet || !coldOutlet) {
+    console.warn(`${block.name}: Missing HX inlets/outlets`);
+    return;
+  }
+
+  const hotIn = streams.get(hotInlet.id);
+  const coldIn = streams.get(coldInlet.id);
+
+  if (!hotIn || !coldIn) {
+    console.warn(`${block.name}: Inlet streams not solved`);
+    return;
+  }
+
+  // Simple approach: 80% effectiveness
+  const effectiveness = 0.80;
+  const deltaT = (hotIn.T - coldIn.T) * effectiveness;
+
+  // Hot side cools down
+  streams.set(hotOutlet.id, {
+    ...hotIn,
+    id: hotOutlet.id,
+    name: hotOutlet.name,
+    T: hotIn.T - deltaT,
+    H: hotIn.H - 30, // Approximate
+  });
+
+  // Cold side heats up
+  streams.set(coldOutlet.id, {
+    ...coldIn,
+    id: coldOutlet.id,
+    name: coldOutlet.name,
+    T: coldIn.T + deltaT,
+    H: coldIn.H + 30, // Approximate
+  });
+
+  results.set(block.id, { effectiveness, duty: hotIn.flow * 50 }); // Approximate duty
 }
 
 /**
