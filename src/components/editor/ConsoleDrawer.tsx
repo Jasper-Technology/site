@@ -184,6 +184,51 @@ export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerP
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
         {activeView === 'summary' && (
           <div className="space-y-4">
+            {/* Show validation errors if simulation failed */}
+            {latestRun.status === 'error' && latestRun.rawOutputs?.validationErrors && (
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-2 text-destructive mb-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm font-semibold">Validation Errors</span>
+                </div>
+                {(latestRun.rawOutputs.validationErrors as any[]).map((err, i) => (
+                  <div 
+                    key={i}
+                    className="p-3 bg-destructive/5 border-l-2 border-destructive rounded text-xs"
+                  >
+                    <span className="font-semibold text-destructive uppercase text-[10px]">
+                      [{err.category}]
+                    </span>
+                    <p className="text-foreground mt-1">{err.message}</p>
+                  </div>
+                ))}
+                {latestRun.rawOutputs.validationWarnings && (latestRun.rawOutputs.validationWarnings as any[]).length > 0 && (
+                  <>
+                    <div className="flex items-center gap-2 text-warning mt-4 mb-2">
+                      <AlertTriangle className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Warnings</span>
+                    </div>
+                    {(latestRun.rawOutputs.validationWarnings as any[]).map((warn, i) => (
+                      <div 
+                        key={i}
+                        className="p-3 bg-warning/5 border-l-2 border-warning rounded text-xs"
+                      >
+                        <span className="font-semibold text-warning uppercase text-[10px]">
+                          [{warn.category}]
+                        </span>
+                        <p className="text-foreground mt-1">{warn.message}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+                <div className="pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground italic">
+                    Fix these errors and run again
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Run info */}
             <div className="flex items-center justify-between text-xs">
               <span className="text-muted-foreground">Run ID</span>
@@ -201,7 +246,8 @@ export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerP
               </span>
             </div>
             
-            {/* Quick KPI summary */}
+            {/* Quick KPI summary - only show if simulation succeeded */}
+            {latestRun.converged && Object.keys(latestRun.kpis).length > 0 && (
             <div className="grid grid-cols-2 gap-2 mt-4">
               {latestRun.kpis.steam !== undefined && (
                 <div className="p-3 bg-muted/30 rounded-xl">
@@ -252,6 +298,7 @@ export default function ConsoleDrawer({ projectId, latestRunId }: ConsoleDrawerP
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
 

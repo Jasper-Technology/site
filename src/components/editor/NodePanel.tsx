@@ -48,7 +48,8 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
 
   // Special handling for TextBox nodes
   if (node.type === 'TextBox') {
-    const textContent = node.params.text?.s || '';
+    const textParam = node.params.text;
+    const textContent = (textParam && 'kind' in textParam && textParam.kind === 'string') ? textParam.s : '';
     
     return (
       <div className="space-y-4">

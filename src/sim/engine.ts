@@ -15,6 +15,8 @@ import type { JasperProject, SimulationRun } from '../core/schema';
 import { stableHash } from '../core/hash';
 import { evaluateMetricRef } from '../core/metrics';
 import { computeCOM } from './economics';
+import { validateFlowsheet } from './validator';
+import { solveFlowsheet } from './solver/blockSolver';
 
 export interface SimulationEngine {
   name: string;
@@ -37,15 +39,15 @@ export class EnhancedJasperSim implements SimulationEngine {
       versionId,
     });
 
-    // Check graph validity
-    const hasNodes = project.flowsheet.nodes.length > 0;
-    const hasEdges = project.flowsheet.edges.length > 0;
-    const feedNodes = project.flowsheet.nodes.filter(n => n.type === 'Feed');
-    const hasConnectivity = feedNodes.length > 0 && hasEdges;
+    // STEP 1: Validate flowsheet (like AspenPlus)
+    const validation = validateFlowsheet(project);
+    
+    if (!validation.valid) {
+      // Return error with detailed messages
+      const errorMessages = validation.errors.map(e => 
+        `[${e.category.toUpperCase()}] ${e.message}`
+      ).join('\n');
 
-    const converged = hasNodes && hasEdges && hasConnectivity;
-
-    if (!converged) {
       return {
         simulator: this.name,
         status: 'error',
@@ -55,21 +57,43 @@ export class EnhancedJasperSim implements SimulationEngine {
         specResults: [],
         violations: [],
         rawOutputs: {
-          error: 'Graph connectivity issues detected',
+          validationErrors: validation.errors,
+          validationWarnings: validation.warnings,
+          errorSummary: `SIMULATION FAILED - ${validation.errors.length} error(s) found:\n\n${errorMessages}`,
         },
       };
     }
 
-    // Enhanced KPI computation
-    const kpis = this.computeKPIs(project);
+    // STEP 2: Solve flowsheet using rigorous thermodynamics
+    const solverResult = solveFlowsheet(project);
     
-    // Evaluate specs
+    if (!solverResult.converged) {
+      return {
+        simulator: this.name,
+        status: 'error',
+        inputsHash,
+        converged: false,
+        kpis: {},
+        specResults: [],
+        violations: [],
+        rawOutputs: {
+          validationWarnings: validation.warnings,
+          solverError: solverResult.error,
+          errorSummary: `SOLVER FAILED: ${solverResult.error}`,
+        },
+      };
+    }
+
+    // STEP 3: Extract KPIs from solved flowsheet
+    const kpis = this.extractKPIs(project, solverResult);
+    
+    // STEP 4: Evaluate specs
     const specResults = this.evaluateSpecs(project, kpis);
     
-    // Evaluate constraints
+    // STEP 5: Evaluate constraints
     const violations = this.evaluateConstraints(project, kpis);
 
-    // Update COM with computed KPIs
+    // STEP 6: Update COM with computed KPIs
     kpis.COM = computeCOM(
       {
         runId: '',
@@ -89,144 +113,85 @@ export class EnhancedJasperSim implements SimulationEngine {
 
     return {
       simulator: this.name,
-      status: converged ? 'done' : 'error',
+      status: 'done',
       inputsHash,
-      converged,
+      converged: true,
       kpis,
       specResults,
       violations,
       rawOutputs: {
-        achievedCapture: kpis.achievedCapture || 0,
-        circulationRate: kpis.circulationRate || 0,
-        totalStages: kpis.totalStages || 0,
+        validationWarnings: validation.warnings,
+        streams: Array.from(solverResult.streams.values()),
+        blockResults: Object.fromEntries(solverResult.blockResults),
       },
     };
   }
 
-  private computeKPIs(project: JasperProject): Record<string, number> {
+  /**
+   * Extract KPIs from rigorous simulation results
+   */
+  private extractKPIs(project: JasperProject, solverResult: any): Record<string, number> {
     const kpis: Record<string, number> = {};
 
-    // Count equipment
-    const pumps = project.flowsheet.nodes.filter(n => n.type === 'Pump');
-    const compressors = project.flowsheet.nodes.filter(n => n.type === 'Compressor');
-    const columns = project.flowsheet.nodes.filter(
-      n => n.type === 'Absorber' || n.type === 'Stripper' || n.type === 'DistillationColumn'
-    );
-    const heatExchangers = project.flowsheet.nodes.filter(n => n.type === 'HeatExchanger');
+    // Energy consumption from block results
+    let totalPower = 0; // kW
+    let totalSteam = 0;  // GJ/h
 
-    // Compute total stages
-    let totalStages = 0;
-    for (const node of columns) {
-      const stagesParam = node.params.stages as any;
-      if (stagesParam?.kind === 'int') {
-        totalStages += stagesParam.n;
-      } else if (stagesParam?.kind === 'number') {
-        totalStages += Math.floor(stagesParam.x);
+    for (const [, result] of solverResult.blockResults.entries()) {
+      if (result.power) {
+        totalPower += result.power;
+      }
+      if (result.duty && result.duty > 0) {
+        // Positive duty = heating = steam
+        totalSteam += result.duty / 1000; // kJ/h to GJ/h
       }
     }
-    kpis.totalStages = totalStages;
 
-    // Compute circulation rate from solvent streams
-    let circulationRate = 0;
-    const solventStreams = project.flowsheet.edges.filter(e => {
-      const spec = e.spec;
-      return spec && (spec.phase === 'L' || spec.phase === 'VL');
+    kpis.electricity = totalPower;
+    kpis.steam = totalSteam;
+
+    // Mass balance - total flow
+    const streams = Array.from(solverResult.streams.values()) as any[];
+    if (streams.length > 0) {
+      const totalFlow = streams.reduce((sum: number, s: any) => sum + s.flow, 0);
+      kpis.totalFlow = totalFlow;
+    }
+
+    // CO2 capture calculation (if applicable)
+    const feedStreams = streams.filter((s: any) => {
+      return project.flowsheet.edges.find((e: any) => 
+        e.id === s.id && project.flowsheet.nodes.find((n: any) => 
+          n.id === e.from.nodeId && n.type === 'Feed'
+        )
+      );
     });
-    if (solventStreams.length > 0) {
-      circulationRate = solventStreams.reduce((sum, s) => {
-        return sum + (s.spec?.flow?.value || 100);
-      }, 0) / solventStreams.length;
-    } else {
-      circulationRate = 500; // Default
-    }
-    kpis.circulationRate = circulationRate;
 
-    // Get stripper pressure
-    let stripperPressure = 2; // bar default
-    const stripper = project.flowsheet.nodes.find(n => n.type === 'Stripper');
-    if (stripper) {
-      const pParam = stripper.params.P as any;
-      if (pParam?.kind === 'quantity') {
-        stripperPressure = pParam.q.value;
-      }
-    }
+    const productStreams = streams.filter((s: any) => {
+      return project.flowsheet.edges.find((e: any) => 
+        e.id === s.id && project.flowsheet.nodes.find((n: any) => 
+          n.id === e.to.nodeId && n.type === 'Sink'
+        )
+      );
+    });
 
-    // Steam consumption (GJ/h)
-    // Based on: reboiler duty for stripper + any heaters
-    let steam = 0;
-    
-    // Stripper reboiler duty (increases with circulation, decreases with pressure)
-    if (stripper) {
-      const baseDuty = circulationRate * 0.5; // GJ/h per kmol/h
-      const pressureFactor = 1 / Math.max(0.5, stripperPressure);
-      steam += baseDuty * pressureFactor;
+    // Calculate CO2 in feed vs product
+    let CO2_in = 0;
+    let CO2_out = 0;
+
+    for (const stream of feedStreams) {
+      const CO2_frac = stream.composition['CO2'] || 0;
+      CO2_in += stream.flow * CO2_frac;
     }
 
-    // Heater duties
-    const heaters = project.flowsheet.nodes.filter(n => n.type === 'Heater');
-    for (const heater of heaters) {
-      const dutyParam = heater.params.duty as any;
-      if (dutyParam?.kind === 'quantity') {
-        steam += dutyParam.q.value * 0.001; // Convert kW to GJ/h (approximate)
-      } else {
-        steam += 50; // Default heater duty
-      }
+    for (const stream of productStreams) {
+      const CO2_frac = stream.composition['CO2'] || 0;
+      CO2_out += stream.flow * CO2_frac;
     }
 
-    kpis.steam = Math.max(100, steam);
-
-    // Electricity consumption (kWh)
-    let electricity = 0;
-    
-    // Pump power
-    for (const pump of pumps) {
-      const powerParam = pump.params.power as any;
-      if (powerParam?.kind === 'quantity') {
-        electricity += powerParam.q.value;
-      } else {
-        const dPParam = pump.params.dP as any;
-        if (dPParam?.kind === 'quantity') {
-          // Power = flow * dP / efficiency
-          electricity += (circulationRate * dPParam.q.value) / 100; // Simplified
-        } else {
-          electricity += 20; // Default
-        }
-      }
+    if (CO2_in > 0) {
+      kpis.CO2_captured = CO2_in - CO2_out; // kmol/h
+      kpis.captureEfficiency = (CO2_in - CO2_out) / CO2_in;
     }
-
-    // Compressor power
-    for (const compressor of compressors) {
-      const powerParam = compressor.params.power as any;
-      if (powerParam?.kind === 'quantity') {
-        electricity += powerParam.q.value;
-      } else {
-        electricity += 100; // Default compressor power
-      }
-    }
-
-    kpis.electricity = electricity;
-
-    // CAPEX proxy (scaled cost units)
-    kpis.CAPEX_proxy = (
-      project.flowsheet.nodes.length * 100 +
-      totalStages * 50 +
-      heatExchangers.length * 150
-    );
-
-    // Achieved capture (for CO2 processes)
-    let achievedCapture = 0.5;
-    if (totalStages > 0) {
-      achievedCapture = Math.min(0.99, 0.5 + (totalStages / 50) * 0.4);
-    }
-    if (circulationRate > 400) {
-      achievedCapture = Math.min(0.99, achievedCapture + 0.2);
-    }
-    kpis.achievedCapture = achievedCapture;
-
-    // CO2 emissions (ton/h)
-    // Base emissions reduced by capture efficiency
-    const baseEmissions = 1000; // ton/h
-    kpis.CO2_emissions = baseEmissions * (1 - achievedCapture);
 
     return kpis;
   }

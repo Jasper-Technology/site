@@ -56,18 +56,15 @@ export default function Inspector({
   const [activeTab, setActiveTab] = useState('node');
   const [collapsed, setCollapsed] = useState(true); // Collapsed by default
   const [expanded, setExpanded] = useState(false);
-  const [hasBeenOpened, setHasBeenOpened] = useState(false); // Track if user has opened it
 
   // Auto-switch to relevant tab and auto-expand when selection changes
   useEffect(() => {
     if (selectedNodeId) {
       setActiveTab('node');
       setCollapsed(false);
-      setHasBeenOpened(true);
     } else if (selectedStreamId) {
       setActiveTab('stream');
       setCollapsed(false);
-      setHasBeenOpened(true);
     }
     // Don't auto-collapse when selection is cleared - let user manually collapse
   }, [selectedNodeId, selectedStreamId]);
@@ -80,7 +77,6 @@ export default function Inspector({
         <button
           onClick={() => {
             setCollapsed(false);
-            setHasBeenOpened(true);
           }}
           className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
           title="Expand Inspector"
@@ -93,7 +89,7 @@ export default function Inspector({
         {tabs.slice(0, 4).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setCollapsed(false); setHasBeenOpened(true); }}
+            onClick={() => { setActiveTab(tab.id); setCollapsed(false); }}
             className={`p-2 rounded-xl transition-colors ${
               effectiveTab === tab.id 
                 ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30' 
@@ -110,7 +106,7 @@ export default function Inspector({
         {tabs.slice(4).map((tab) => (
           <button
             key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setCollapsed(false); setHasBeenOpened(true); }}
+            onClick={() => { setActiveTab(tab.id); setCollapsed(false); }}
             className={`p-2 rounded-xl transition-colors ${
               effectiveTab === tab.id 
                 ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30' 
@@ -166,7 +162,6 @@ export default function Inspector({
             <button
               onClick={() => {
                 setCollapsed(true);
-                setHasBeenOpened(false);
               }}
               className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors hover:bg-slate-100 dark:hover:bg-slate-700"
               title="Collapse"
