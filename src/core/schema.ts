@@ -37,6 +37,8 @@ export const UnitTypeSchema = z.enum([
   'DistillationColumn',
   'Reactor',
   'Separator',
+  'Sink',
+  'TextBox',
 ]);
 export type UnitType = z.infer<typeof UnitTypeSchema>;
 

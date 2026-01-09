@@ -274,6 +274,37 @@ export const SplitterNode = memo(({ data, selected }: NodeProps<CustomNodeData>)
   </NodeWrapper>
 ));
 
+// Sink/Outlet node
+export const SinkNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => (
+  <NodeWrapper selected={selected}>
+    <svg width="48" height="48" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="18" className="fill-card stroke-foreground" strokeWidth="2"/>
+      <path d="M 24 15 L 24 33 M 18 27 L 24 33 L 30 27" className="stroke-foreground fill-none" strokeWidth="2"/>
+    </svg>
+    <NodeLabel label={data.label} />
+    <Handle type="target" position={Position.Left} id="in" style={handleStyle} />
+  </NodeWrapper>
+));
+
+// TextBox annotation node (editable text)
+export const TextBoxNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
+  const textContent = data.node.params?.text?.s || 'Double-click to edit';
+  
+  return (
+    <NodeWrapper selected={selected}>
+      <div className={`
+        px-4 py-3 min-w-[120px] max-w-[280px] rounded-lg 
+        bg-slate-50/90 dark:bg-slate-800/90 backdrop-blur-sm
+        border-2 ${selected ? 'border-teal-500 dark:border-teal-400' : 'border-slate-300 dark:border-slate-600'}
+        text-slate-800 dark:text-slate-200 text-sm leading-relaxed
+        shadow-lg transition-colors
+      `}>
+        <div className="whitespace-pre-wrap break-words">{textContent}</div>
+      </div>
+    </NodeWrapper>
+  );
+});
+
 // Node type mapping
 export const nodeTypes: Record<UnitType, React.ComponentType<NodeProps<CustomNodeData>>> = {
   Feed: FeedNode,
@@ -291,4 +322,6 @@ export const nodeTypes: Record<UnitType, React.ComponentType<NodeProps<CustomNod
   DistillationColumn: DistillationColumnNode,
   Reactor: ReactorNode,
   Separator: SeparatorNode,
+  Sink: SinkNode,
+  TextBox: TextBoxNode,
 };

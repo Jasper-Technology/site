@@ -18,20 +18,20 @@ export default function EconomicsPanel({ project, onProjectChange }: EconomicsPa
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Steam Price ($/GJ)</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Steam Price ($/GJ)</label>
         <input
           type="number"
           value={economics.steamPrice || ''}
           onChange={(e) =>
             updateEconomics({ steamPrice: e.target.value ? parseFloat(e.target.value) : undefined })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="10"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
           Electricity Price ($/kWh)
         </label>
         <input
@@ -42,26 +42,26 @@ export default function EconomicsPanel({ project, onProjectChange }: EconomicsPa
               electricityPrice: e.target.value ? parseFloat(e.target.value) : undefined,
             })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="0.1"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">CO2 Price ($/ton)</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CO2 Price ($/ton)</label>
         <input
           type="number"
           value={economics.co2Price || ''}
           onChange={(e) =>
             updateEconomics({ co2Price: e.target.value ? parseFloat(e.target.value) : undefined })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="50"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">CAPEX Factor</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CAPEX Factor</label>
         <input
           type="number"
           value={economics.capexFactor || ''}
@@ -70,17 +70,17 @@ export default function EconomicsPanel({ project, onProjectChange }: EconomicsPa
               capexFactor: e.target.value ? parseFloat(e.target.value) : undefined,
             })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="0.1"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notes</label>
         <textarea
           value={economics.notes || ''}
           onChange={(e) => updateEconomics({ notes: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input resize-none"
           rows={3}
           placeholder="Additional notes..."
         />

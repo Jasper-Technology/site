@@ -16,11 +16,11 @@ export default function ObjectivePanel({ project, onProjectChange }: ObjectivePa
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Objective Metric</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Objective Metric</label>
         <select
           value={project.objective.metric}
           onChange={(e) => updateObjective({ metric: e.target.value as any })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         >
           <option value="steam">Steam</option>
           <option value="electricity">Electricity</option>
@@ -30,11 +30,11 @@ export default function ObjectivePanel({ project, onProjectChange }: ObjectivePa
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Sense</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Sense</label>
         <select
           value={project.objective.sense}
           onChange={(e) => updateObjective({ sense: e.target.value as any })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         >
           <option value="min">Minimize</option>
           <option value="max">Maximize</option>
@@ -42,14 +42,14 @@ export default function ObjectivePanel({ project, onProjectChange }: ObjectivePa
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Weight (optional)</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Weight (optional)</label>
         <input
           type="number"
           value={project.objective.weight || ''}
           onChange={(e) =>
             updateObjective({ weight: e.target.value ? parseFloat(e.target.value) : undefined })
           }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           placeholder="1.0"
         />
       </div>

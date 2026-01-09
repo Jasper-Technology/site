@@ -30,34 +30,44 @@ interface PfdCanvasProps {
 }
 
 // Convert graph to React Flow format
+// Each block in our flowsheet becomes a visual node
 function graphToNodes(graph: FlowsheetGraph): Node[] {
-  return graph.nodes.map((node) => {
-    const layoutPos = graph.layout?.nodes[node.id];
+  return graph.nodes.map((block) => {
+    const layoutPos = graph.layout?.nodes[block.id];
     return {
-      id: node.id,
-      type: node.type,
+      id: block.id, // Use block ID directly - single source of truth
+      type: block.type,
       position: layoutPos && typeof layoutPos.x === 'number' && typeof layoutPos.y === 'number'
         ? { x: layoutPos.x, y: layoutPos.y }
         : { x: 200 + Math.random() * 200, y: 150 + Math.random() * 150 },
-      data: { label: node.name, node, type: node.type },
+      data: { 
+        label: block.name, 
+        node: block, // Keep reference to the data block
+        type: block.type 
+      },
+      // Make nodes selectable
+      selectable: true,
+      draggable: true,
     };
   });
 }
 
 function graphToEdges(graph: FlowsheetGraph): Edge[] {
-  // Filter out edges that reference non-existent nodes
-  const nodeIds = new Set(graph.nodes.map(n => n.id));
+  // Filter out edges that reference non-existent blocks
+  const blockIds = new Set(graph.nodes.map(n => n.id));
   
   return graph.edges
-    .filter(edge => nodeIds.has(edge.from.nodeId) && nodeIds.has(edge.to.nodeId))
-    .map((edge) => ({
-      id: edge.id,
-      source: edge.from.nodeId,
-      sourceHandle: edge.from.portName || null, // null means default handle
-      target: edge.to.nodeId,
-      targetHandle: edge.to.portName || null,
-      label: edge.name,
+    .filter(stream => blockIds.has(stream.from.nodeId) && blockIds.has(stream.to.nodeId))
+    .map((stream) => ({
+      id: stream.id, // Stream ID is the edge ID
+      source: stream.from.nodeId, // Connect from source block
+      sourceHandle: stream.from.portName || null,
+      target: stream.to.nodeId, // Connect to target block
+      targetHandle: stream.to.portName || null,
+      label: stream.name,
       type: 'smoothstep',
+      // Make edges selectable
+      selectable: true,
       markerEnd: { 
         type: MarkerType.ArrowClosed, 
         color: 'hsl(var(--stream-color))',
@@ -89,11 +99,11 @@ export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanva
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
   const [initialized, setInitialized] = useState(false);
   
-  // Local React Flow state
+  // Local React Flow state - visual representation of blocks and streams
   const [nodes, setNodes] = useState<Node[]>(() => graphToNodes(graph));
   const [edges, setEdges] = useState<Edge[]>(() => graphToEdges(graph));
   
-  // Track graph node count to detect external additions
+  // Track graph changes to sync visual layer
   const prevNodeCount = useRef(graph.nodes.length);
   const prevEdgeCount = useRef(graph.edges.length);
   
@@ -241,21 +251,20 @@ export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanva
     }
   }, [initialized]);
 
-  // Selection handlers
+  // Block selection handler
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       setSelectedNode(node.id);
-      setSelectedStream(null);
     },
-    [setSelectedNode, setSelectedStream]
+    [setSelectedNode]
   );
 
+  // Stream selection handler
   const onEdgeClick = useCallback(
     (_: React.MouseEvent, edge: Edge) => {
       setSelectedStream(edge.id);
-      setSelectedNode(null);
     },
-    [setSelectedStream, setSelectedNode]
+    [setSelectedStream]
   );
 
   const onPaneClick = useCallback(() => {

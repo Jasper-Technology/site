@@ -13,10 +13,10 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
     [project, nodeId]
   );
 
-  if (!node) {
+  if (!nodeId || !node) {
     return (
-      <div className="text-sm text-slate-400 text-center py-8">
-        Select a node to edit its properties
+      <div className="text-sm text-slate-400 dark:text-slate-500 text-center py-8">
+        Select a unit to edit its properties
       </div>
     );
   }
@@ -46,33 +46,56 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
     });
   };
 
+  // Special handling for TextBox nodes
+  if (node.type === 'TextBox') {
+    const textContent = node.params.text?.s || '';
+    
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Text Content</label>
+          <textarea
+            value={textContent}
+            onChange={(e) => updateParam('text', { kind: 'string', s: e.target.value })}
+            className="input resize-none"
+            rows={6}
+            placeholder="Enter annotation text..."
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+            Add notes, labels, or comments to your flowsheet
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
         <input
           type="text"
           value={node.name}
           onChange={(e) => updateName(e.target.value)}
-          className="w-full px-3 py-2 bg-slate-700 border border-slate-600 text-slate-100 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1">Type</label>
-        <div className="px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-sm text-slate-300">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label>
+        <div className="input cursor-default">
           {node.type}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Parameters</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Parameters</label>
         <div className="space-y-2">
           {Object.entries(node.params).map(([key, param]) => {
             const typedParam = param as ParamValue;
             return (
               <div key={key} className="flex items-center space-x-2">
-                <span className="text-sm text-slate-400 w-24">{key}:</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400 w-24">{key}:</span>
                 {typedParam.kind === 'quantity' && (
                   <div className="flex-1 flex items-center space-x-2">
                     <input
@@ -84,7 +107,7 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
                           q: { value: parseFloat(e.target.value) || 0, unit: typedParam.q.unit },
                         })
                       }
-                      className="flex-1 px-2 py-1 bg-slate-700 border border-slate-600 text-slate-100 rounded text-sm"
+                      className="flex-1 input-sm"
                     />
                     <input
                       type="text"
@@ -95,7 +118,7 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
                           q: { value: typedParam.q.value, unit: e.target.value },
                         })
                       }
-                      className="w-20 px-2 py-1 bg-slate-700 border border-slate-600 text-slate-100 rounded text-sm"
+                      className="w-20 input-sm"
                     />
                   </div>
                 )}
@@ -106,7 +129,7 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
                     onChange={(e) =>
                       updateParam(key, { kind: 'number', x: parseFloat(e.target.value) || 0 })
                     }
-                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                    className="flex-1 input-sm"
                   />
                 )}
                 {typedParam.kind === 'int' && (
@@ -116,7 +139,7 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
                     onChange={(e) =>
                       updateParam(key, { kind: 'int', n: parseInt(e.target.value) || 0 })
                     }
-                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                    className="flex-1 input-sm"
                   />
                 )}
               </div>
@@ -126,10 +149,10 @@ export default function NodePanel({ project, onProjectChange, nodeId }: NodePane
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Ports</label>
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Ports</label>
         <div className="space-y-1">
           {node.ports.map((port) => (
-            <div key={port.id} className="text-sm text-slate-300 px-2 py-1 bg-slate-700 rounded">
+            <div key={port.id} className="text-sm text-slate-700 dark:text-slate-300 px-2 py-1 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded">
               {port.name} ({port.direction})
             </div>
           ))}

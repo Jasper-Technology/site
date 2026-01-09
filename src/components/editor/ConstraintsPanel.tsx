@@ -101,10 +101,10 @@ export default function ConstraintsPanel({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-medium text-gray-900">Constraints</h3>
+        <h3 className="text-sm font-medium text-slate-800 dark:text-slate-200">Constraints</h3>
         <button
           onClick={() => setShowAdd(true)}
-          className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700"
+          className="inline-flex items-center px-2 py-1 text-xs font-medium text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300"
         >
           <Plus className="h-3 w-3 mr-1" />
           Add
@@ -112,11 +112,11 @@ export default function ConstraintsPanel({
       </div>
 
       {showAdd && (
-        <div className="p-3 bg-gray-50 rounded border border-gray-200 space-y-2">
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 space-y-2">
           <select
             value={constraintType}
             onChange={(e) => setConstraintType(e.target.value as any)}
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+            className="input-sm w-full"
           >
             <option value="max">Max</option>
             <option value="min">Min</option>
@@ -125,7 +125,7 @@ export default function ConstraintsPanel({
           <select
             value={metricKind}
             onChange={(e) => setMetricKind(e.target.value as any)}
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+            className="input-sm w-full"
           >
             <option value="kpi">KPI</option>
             <option value="stream">Stream</option>
@@ -136,7 +136,7 @@ export default function ConstraintsPanel({
             value={metric}
             onChange={(e) => setMetric(e.target.value)}
             placeholder="Metric name"
-            className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+            className="input-sm w-full"
           />
           {constraintType === 'range' ? (
             <div className="flex space-x-2">
@@ -145,14 +145,14 @@ export default function ConstraintsPanel({
                 value={minLimit}
                 onChange={(e) => setMinLimit(parseFloat(e.target.value) || 0)}
                 placeholder="Min"
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                className="input-sm flex-1"
               />
               <input
                 type="number"
                 value={maxLimit}
                 onChange={(e) => setMaxLimit(parseFloat(e.target.value) || 0)}
                 placeholder="Max"
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                className="input-sm flex-1"
               />
             </div>
           ) : (
@@ -161,19 +161,19 @@ export default function ConstraintsPanel({
               value={limit}
               onChange={(e) => setLimit(parseFloat(e.target.value) || 0)}
               placeholder="Limit"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+              className="input-sm w-full"
             />
           )}
           <div className="flex space-x-2">
             <button
               onClick={addConstraint}
-              className="flex-1 px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="flex-1 px-3 py-1.5 text-sm bg-teal-600 dark:bg-teal-500 text-white rounded-lg hover:bg-teal-700 dark:hover:bg-teal-600 transition-colors"
             >
               Add
             </button>
             <button
               onClick={() => setShowAdd(false)}
-              className="flex-1 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              className="flex-1 px-3 py-1.5 text-sm bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
             >
               Cancel
             </button>
@@ -183,19 +183,19 @@ export default function ConstraintsPanel({
 
       <div className="space-y-2">
         {project.constraints.constraints.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">No constraints defined</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 text-center py-4">No constraints defined</p>
         ) : (
           project.constraints.constraints.map((constraint) => {
             const violation = getViolation(constraint.id);
             return (
               <div
                 key={constraint.id}
-                className={`p-3 border rounded flex items-start justify-between ${
-                  violation ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                className={`p-3 border rounded-lg flex items-start justify-between ${
+                  violation ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20' : 'border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30'
                 }`}
               >
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-slate-800 dark:text-slate-200">
                     {constraint.type === 'max' &&
                       `${constraint.ref.kind === 'kpi' ? constraint.ref.metric : 'metric'} ≤ ${constraint.limit}`}
                     {constraint.type === 'min' &&
@@ -204,12 +204,12 @@ export default function ConstraintsPanel({
                       `${constraint.ref.kind === 'kpi' ? constraint.ref.metric : 'metric'} ∈ [${constraint.min}, ${constraint.max}]`}
                   </div>
                   {violation && (
-                    <div className="mt-1 text-xs text-red-600">{violation.message}</div>
+                    <div className="mt-1 text-xs text-red-600 dark:text-red-500">{violation.message}</div>
                   )}
                 </div>
                 <button
                   onClick={() => removeConstraint(constraint.id)}
-                  className="ml-2 text-gray-400 hover:text-red-600"
+                  className="ml-2 text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

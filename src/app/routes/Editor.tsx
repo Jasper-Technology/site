@@ -107,6 +107,12 @@ export default function Editor() {
       case 'Feed':
         ports.push({ id: generateId('port'), name: 'out', direction: 'out', phase: 'L' });
         break;
+      case 'Sink':
+        ports.push({ id: generateId('port'), name: 'in', direction: 'in' });
+        break;
+      case 'TextBox':
+        // TextBox nodes don't have ports
+        break;
       case 'Mixer':
         ports.push(
           { id: generateId('port'), name: 'in1', direction: 'in' },
@@ -182,11 +188,17 @@ export default function Editor() {
         y: 200 + Math.random() * 100 
       };
 
+      // Initialize params based on type
+      const params: Record<string, any> = {};
+      if (type === 'TextBox') {
+        params.text = { kind: 'string', s: 'Double-click to edit' };
+      }
+
       const newNode: UnitOpNode = {
         id: nodeId,
         type,
         name: `${type}-${localProject.flowsheet.nodes.length + 1}`,
-        params: {},
+        params,
         ports,
       };
 

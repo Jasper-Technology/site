@@ -9,8 +9,9 @@ interface BottomToolbarProps {
 
 // Equipment definitions with ISA 5.1 / industry standard symbols
 const equipmentItems: { type: UnitType; label: string; category: string }[] = [
-  // Sources
+  // Sources & Sinks
   { type: 'Feed', label: 'Feed', category: 'source' },
+  { type: 'Sink', label: 'Outlet', category: 'source' },
   // Vessels
   { type: 'Flash', label: 'Flash', category: 'vessel' },
   { type: 'Separator', label: 'Separator', category: 'vessel' },
@@ -30,6 +31,8 @@ const equipmentItems: { type: UnitType; label: string; category: string }[] = [
   { type: 'Valve', label: 'Valve', category: 'flow' },
   { type: 'Mixer', label: 'Mixer', category: 'flow' },
   { type: 'Splitter', label: 'Splitter', category: 'flow' },
+  // Annotations
+  { type: 'TextBox', label: 'Text', category: 'annotation' },
 ];
 
 // ISA 5.1 Standard P&ID Symbol Components
@@ -148,6 +151,24 @@ const PIDSymbol = ({ type }: { type: UnitType }) => {
         </svg>
       );
     
+    case 'Sink':
+      return (
+        <svg viewBox="0 0 40 40" className={baseClass}>
+          <circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" strokeWidth="2"/>
+          <path d="M 20 12 L 20 28 M 14 22 L 20 28 L 26 22" fill="none" stroke="currentColor" strokeWidth="2"/>
+        </svg>
+      );
+    
+    case 'TextBox':
+      return (
+        <svg viewBox="0 0 40 40" className={baseClass}>
+          <rect x="6" y="10" width="28" height="20" rx="2" fill="none" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="10" y1="16" x2="30" y2="16" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="10" y1="20" x2="26" y2="20" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="10" y1="24" x2="28" y2="24" stroke="currentColor" strokeWidth="1.5"/>
+        </svg>
+      );
+    
     default:
       return (
         <svg viewBox="0 0 40 40" className={baseClass}>
@@ -175,12 +196,13 @@ export default function BottomToolbar({ onAddNode }: BottomToolbarProps) {
 
   // Group by category for expanded view
   const categories = [
-    { id: 'source', label: 'Sources' },
+    { id: 'source', label: 'Sources & Outlets' },
     { id: 'vessel', label: 'Vessels' },
     { id: 'column', label: 'Columns' },
     { id: 'heat', label: 'Heat Transfer' },
     { id: 'rotating', label: 'Rotating' },
     { id: 'flow', label: 'Flow' },
+    { id: 'annotation', label: 'Annotations' },
   ];
 
   return (
