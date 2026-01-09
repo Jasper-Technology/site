@@ -50,6 +50,13 @@ export function createBlankTemplate(): {
   };
 }
 
+/**
+ * Complete CO2 Capture Process Template
+ * - Full specifications for all inlet streams
+ * - All compositions sum to 1.0
+ * - Realistic process parameters
+ * - Demonstrates rigorous thermodynamic calculations
+ */
 export function createDEACO2CaptureTemplate(): {
   thermodynamics: ThermoConfig;
   components: Component[];
@@ -59,37 +66,62 @@ export function createDEACO2CaptureTemplate(): {
   objective: Objective;
   economics: EconomicConfig;
 } {
-  // Generate stable IDs for all nodes
-  const feedId = generateId('node');
-  const absorberId = generateId('node');
-  const stripperId = generateId('node');
-  const pumpId = generateId('node');
-  const coolerId = generateId('node');
-  const heId = generateId('node');
-  const treatedGasOutletId = generateId('node'); // Outlet for treated gas
-  const co2ProductOutletId = generateId('node'); // Outlet for CO2 product
+  // Component IDs (must be consistent throughout)
+  const co2Id = generateId('comp');
+  const n2Id = generateId('comp');
+  const meaId = generateId('comp');
+  const h2oId = generateId('comp');
 
-  // Create nodes with ports that match the handle IDs in CustomNodes.tsx
+  // Define components first
+  const components: Component[] = [
+    { id: co2Id, name: 'CO2', formula: 'CO2', role: 'solute' },
+    { id: n2Id, name: 'N2', formula: 'N2', role: 'inert' },
+    { id: meaId, name: 'MEA', formula: 'C2H7NO', role: 'solvent' },
+    { id: h2oId, name: 'H2O', formula: 'H2O', role: 'solvent' },
+  ];
+
+  // Generate stable IDs for all blocks
+  const flueGasFeedId = generateId('node');
+  const leanMakeupId = generateId('node'); // Makeup lean solvent feed
+  const absorberId = generateId('node');
+  const richLeanHxId = generateId('node');
+  const stripperId = generateId('node');
+  const heaterIdId = generateId('node'); // Reboiler
+  const leanPumpId = generateId('node');
+  const leanCoolerId = generateId('node');
+  const treatedGasSinkId = generateId('node');
+  const co2ProductSinkId = generateId('node');
+
+  // Create blocks with full specifications
   const nodes: UnitOpNode[] = [
+    // ========== FEEDS ==========
     {
-      id: feedId,
+      id: flueGasFeedId,
       type: 'Feed',
-      name: 'Flue Gas',
-      params: {
-        flow: { kind: 'quantity', q: { value: 100, unit: 'kmol/h' } },
-        T: { kind: 'quantity', q: { value: 40, unit: 'C' } },
-        P: { kind: 'quantity', q: { value: 1, unit: 'bar' } },
-      },
+      name: 'Flue Gas Feed',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'V' },
+      ],
+    },
+    {
+      id: leanMakeupId,
+      type: 'Feed',
+      name: 'Lean Makeup',
+      params: {},
       ports: [
         { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
       ],
     },
+    
+    // ========== ABSORBER ==========
     {
       id: absorberId,
       type: 'Absorber',
       name: 'Absorber',
       params: {
         stages: { kind: 'int', n: 20 },
+        P: { kind: 'quantity', q: { value: 1.1, unit: 'bar' } },
       },
       ports: [
         { id: generateId('port'), name: 'gas-in', direction: 'in', phase: 'V' },
@@ -98,50 +130,14 @@ export function createDEACO2CaptureTemplate(): {
         { id: generateId('port'), name: 'liquid-out', direction: 'out', phase: 'L' },
       ],
     },
+
+    // ========== HEAT EXCHANGER ==========
     {
-      id: stripperId,
-      type: 'Stripper',
-      name: 'Stripper',
-      params: {
-        stages: { kind: 'int', n: 10 },
-        P: { kind: 'quantity', q: { value: 2, unit: 'bar' } },
-      },
-      ports: [
-        { id: generateId('port'), name: 'feed', direction: 'in', phase: 'L' },
-        { id: generateId('port'), name: 'overhead', direction: 'out', phase: 'V' },
-        { id: generateId('port'), name: 'bottoms', direction: 'out', phase: 'L' },
-      ],
-    },
-    {
-      id: pumpId,
-      type: 'Pump',
-      name: 'Lean Pump',
-      params: {
-        dP: { kind: 'quantity', q: { value: 5, unit: 'bar' } },
-      },
-      ports: [
-        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
-        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
-      ],
-    },
-    {
-      id: coolerId,
-      type: 'Cooler',
-      name: 'Lean Cooler',
-      params: {
-        T_out: { kind: 'quantity', q: { value: 40, unit: 'C' } },
-      },
-      ports: [
-        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
-        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
-      ],
-    },
-    {
-      id: heId,
+      id: richLeanHxId,
       type: 'HeatExchanger',
       name: 'Rich/Lean HX',
       params: {
-        UA: { kind: 'quantity', q: { value: 1000, unit: 'kW/K' } },
+        UA: { kind: 'quantity', q: { value: 500, unit: 'kW/K' } },
       },
       ports: [
         { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
@@ -150,130 +146,200 @@ export function createDEACO2CaptureTemplate(): {
         { id: generateId('port'), name: 'cold-out', direction: 'out', phase: 'L' },
       ],
     },
-    // Outlet nodes (Feed type used as product outlets)
+
+    // ========== STRIPPER ==========
     {
-      id: treatedGasOutletId,
-      type: 'Feed',
+      id: stripperId,
+      type: 'Stripper',
+      name: 'Stripper',
+      params: {
+        stages: { kind: 'int', n: 10 },
+        P: { kind: 'quantity', q: { value: 1.8, unit: 'bar' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'feed', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'overhead', direction: 'out', phase: 'V' },
+        { id: generateId('port'), name: 'bottoms', direction: 'out', phase: 'L' },
+      ],
+    },
+
+    // ========== REBOILER ==========
+    {
+      id: heaterIdId,
+      type: 'Heater',
+      name: 'Reboiler',
+      params: {
+        outletT: { kind: 'quantity', q: { value: 120, unit: 'C' } },
+        duty: { kind: 'quantity', q: { value: 2500, unit: 'kW' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+
+    // ========== LEAN PUMP ==========
+    {
+      id: leanPumpId,
+      type: 'Pump',
+      name: 'Lean Pump',
+      params: {
+        dP: { kind: 'quantity', q: { value: 0.5, unit: 'bar' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+
+    // ========== LEAN COOLER ==========
+    {
+      id: leanCoolerId,
+      type: 'Cooler',
+      name: 'Lean Cooler',
+      params: {
+        outletT: { kind: 'quantity', q: { value: 40, unit: 'C' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+
+    // ========== OUTLETS (SINKS) ==========
+    {
+      id: treatedGasSinkId,
+      type: 'Sink',
       name: 'Treated Gas',
       params: {},
       ports: [
         { id: generateId('port'), name: 'in', direction: 'in', phase: 'V' },
-        { id: generateId('port'), name: 'out', direction: 'out', phase: 'V' },
       ],
     },
     {
-      id: co2ProductOutletId,
-      type: 'Feed',
+      id: co2ProductSinkId,
+      type: 'Sink',
       name: 'CO2 Product',
       params: {},
       ports: [
         { id: generateId('port'), name: 'in', direction: 'in', phase: 'V' },
-        { id: generateId('port'), name: 'out', direction: 'out', phase: 'V' },
       ],
     },
   ];
 
-  // Create stream IDs
+  // Create stream IDs for important streams
   const flueGasStreamId = generateId('stream');
   const treatedGasStreamId = generateId('stream');
+  const co2ProductStreamId = generateId('stream');
 
+  // Create streams with COMPLETE specifications
   const edges: StreamEdge[] = [
-    // Flue Gas → Absorber
+    // 1. Flue Gas (Feed → Absorber) - FULLY SPECIFIED
     {
       id: flueGasStreamId,
-      name: 'Flue Gas',
-      from: { nodeId: feedId, portName: 'out' },
+      name: 'S1-Flue-Gas',
+      from: { nodeId: flueGasFeedId, portName: 'out' },
       to: { nodeId: absorberId, portName: 'gas-in' },
       spec: {
         T: { value: 40, unit: 'C' },
-        P: { value: 1, unit: 'bar' },
-        flow: { value: 100, unit: 'kmol/h' },
-        composition: { CO2: 0.12, N2: 0.88 } as Record<string, number>,
+        P: { value: 1.05, unit: 'bar' },
+        flow: { value: 1000, unit: 'kmol/h' },
+        composition: {
+          [co2Id]: 0.13,  // 13% CO2 (typical flue gas)
+          [n2Id]: 0.87,   // 87% N2 (balance)
+        },
         phase: 'V',
       },
     },
-    // Lean Solvent (Cooler → Absorber)
+
+    // 2. Lean Makeup (Feed → Cooler) - FULLY SPECIFIED
     {
       id: generateId('stream'),
-      name: 'Lean Solvent',
-      from: { nodeId: coolerId, portName: 'out' },
-      to: { nodeId: absorberId, portName: 'liquid-in' },
+      name: 'S2-Lean-Makeup',
+      from: { nodeId: leanMakeupId, portName: 'out' },
+      to: { nodeId: leanCoolerId, portName: 'in' },
       spec: {
-        T: { value: 40, unit: 'C' },
-        P: { value: 1, unit: 'bar' },
-        flow: { value: 500, unit: 'kmol/h' },
+        T: { value: 60, unit: 'C' },
+        P: { value: 1.6, unit: 'bar' },
+        flow: { value: 5000, unit: 'kmol/h' },
+        composition: {
+          [meaId]: 0.30,  // 30 wt% MEA solution
+          [h2oId]: 0.70,  // 70 wt% water
+        },
         phase: 'L',
       },
     },
-    // Treated Gas (Absorber → Outlet)
+
+    // 3. Lean Solvent (Cooler → Absorber)
+    {
+      id: generateId('stream'),
+      name: 'S3-Lean-Solvent',
+      from: { nodeId: leanCoolerId, portName: 'out' },
+      to: { nodeId: absorberId, portName: 'liquid-in' },
+    },
+
+    // 4. Treated Gas (Absorber → Sink)
     {
       id: treatedGasStreamId,
-      name: 'Treated Gas',
+      name: 'S4-Treated-Gas',
       from: { nodeId: absorberId, portName: 'gas-out' },
-      to: { nodeId: treatedGasOutletId, portName: 'in' },
-      spec: {
-        phase: 'V',
-      },
+      to: { nodeId: treatedGasSinkId, portName: 'in' },
     },
-    // Rich Solvent (Absorber → HX)
+
+    // 5. Rich Solvent (Absorber → HX hot side)
     {
       id: generateId('stream'),
-      name: 'Rich Solvent',
+      name: 'S5-Rich-Solvent',
       from: { nodeId: absorberId, portName: 'liquid-out' },
-      to: { nodeId: heId, portName: 'in' },
-      spec: {
-        phase: 'L',
-      },
+      to: { nodeId: richLeanHxId, portName: 'in' },
     },
-    // Rich to Stripper (HX → Stripper)
+
+    // 6. Rich Heated (HX → Stripper)
     {
       id: generateId('stream'),
-      name: 'Rich to Stripper',
-      from: { nodeId: heId, portName: 'out' },
+      name: 'S6-Rich-Heated',
+      from: { nodeId: richLeanHxId, portName: 'out' },
       to: { nodeId: stripperId, portName: 'feed' },
-      spec: {
-        phase: 'L',
-      },
     },
-    // CO2 Product (Stripper → Outlet)
+
+    // 7. CO2 Product (Stripper → Sink)
     {
-      id: generateId('stream'),
-      name: 'CO2 Product',
+      id: co2ProductStreamId,
+      name: 'S7-CO2-Product',
       from: { nodeId: stripperId, portName: 'overhead' },
-      to: { nodeId: co2ProductOutletId, portName: 'in' },
-      spec: {
-        phase: 'V',
-      },
+      to: { nodeId: co2ProductSinkId, portName: 'in' },
     },
-    // Lean from Stripper (Stripper → HX cold side)
+
+    // 8. Lean Hot (Stripper → Reboiler) - RECYCLE
     {
       id: generateId('stream'),
-      name: 'Lean from Stripper',
+      name: 'S8-Lean-Hot',
       from: { nodeId: stripperId, portName: 'bottoms' },
-      to: { nodeId: heId, portName: 'cold-in' },
-      spec: {
-        phase: 'L',
-      },
+      to: { nodeId: heaterIdId, portName: 'in' },
     },
-    // Lean to Pump (HX → Pump)
+
+    // 9. Lean from Reboiler (Reboiler → HX cold side)
     {
       id: generateId('stream'),
-      name: 'Lean to Pump',
-      from: { nodeId: heId, portName: 'cold-out' },
-      to: { nodeId: pumpId, portName: 'in' },
-      spec: {
-        phase: 'L',
-      },
+      name: 'S9-Lean-Reboiler',
+      from: { nodeId: heaterIdId, portName: 'out' },
+      to: { nodeId: richLeanHxId, portName: 'cold-in' },
     },
-    // Lean to Cooler (Pump → Cooler)
+
+    // 10. Lean Cooled (HX → Pump)
     {
       id: generateId('stream'),
-      name: 'Lean to Cooler',
-      from: { nodeId: pumpId, portName: 'out' },
-      to: { nodeId: coolerId, portName: 'in' },
-      spec: {
-        phase: 'L',
-      },
+      name: 'S10-Lean-Cooled',
+      from: { nodeId: richLeanHxId, portName: 'cold-out' },
+      to: { nodeId: leanPumpId, portName: 'in' },
+    },
+
+    // 11. Lean Pumped (Pump → Cooler) - RECYCLE CLOSES HERE
+    {
+      id: generateId('stream'),
+      name: 'S11-Lean-Pumped',
+      from: { nodeId: leanPumpId, portName: 'out' },
+      to: { nodeId: leanCoolerId, portName: 'in' },
     },
   ];
 
@@ -283,25 +349,22 @@ export function createDEACO2CaptureTemplate(): {
       eos: 'PR',
       electrolytes: true,
     },
-    components: [
-      { id: generateId('comp'), name: 'CO2', formula: 'CO2', role: 'solute' },
-      { id: generateId('comp'), name: 'N2', formula: 'N2', role: 'inert' },
-      { id: generateId('comp'), name: 'MDEA', formula: 'C5H13NO2', role: 'solvent' },
-      { id: generateId('comp'), name: 'H2O', formula: 'H2O', role: 'solvent' },
-    ],
+    components,
     flowsheet: {
       nodes,
       edges,
       layout: {
         nodes: {
-          [feedId]: { x: 80, y: 150 },
-          [absorberId]: { x: 250, y: 150 },
-          [treatedGasOutletId]: { x: 420, y: 50 },
-          [heId]: { x: 420, y: 250 },
-          [stripperId]: { x: 580, y: 150 },
-          [co2ProductOutletId]: { x: 720, y: 50 },
-          [pumpId]: { x: 350, y: 380 },
-          [coolerId]: { x: 180, y: 380 },
+          [flueGasFeedId]: { x: 100, y: 120 },
+          [leanMakeupId]: { x: 100, y: 450 },
+          [absorberId]: { x: 300, y: 200 },
+          [treatedGasSinkId]: { x: 480, y: 80 },
+          [richLeanHxId]: { x: 500, y: 300 },
+          [stripperId]: { x: 700, y: 200 },
+          [co2ProductSinkId]: { x: 880, y: 80 },
+          [heaterIdId]: { x: 700, y: 380 },
+          [leanPumpId]: { x: 500, y: 450 },
+          [leanCoolerId]: { x: 300, y: 450 },
         },
       },
     },
@@ -312,7 +375,7 @@ export function createDEACO2CaptureTemplate(): {
           type: 'capture',
           component: 'CO2',
           ventStreamId: treatedGasStreamId,
-          targetRemoval: 0.9,
+          targetRemoval: 0.90, // 90% CO2 capture target
         },
       ],
     },
@@ -322,15 +385,15 @@ export function createDEACO2CaptureTemplate(): {
           id: generateId('constraint'),
           type: 'max',
           ref: { kind: 'kpi', metric: 'steam' },
-          limit: 1000,
-          hard: true,
+          limit: 3500, // GJ/h maximum steam
+          hard: false,
         },
         {
           id: generateId('constraint'),
           type: 'max',
           ref: { kind: 'kpi', metric: 'electricity' },
-          limit: 500,
-          hard: true,
+          limit: 200, // kW maximum power
+          hard: false,
         },
       ],
     },
@@ -339,10 +402,10 @@ export function createDEACO2CaptureTemplate(): {
       sense: 'min',
     },
     economics: {
-      steamPrice: 10,
-      electricityPrice: 0.1,
-      co2Price: 50,
-      capexFactor: 0.1,
+      steamPrice: 10, // $/GJ
+      electricityPrice: 0.08, // $/kWh
+      co2Price: 60, // $/ton captured
+      capexFactor: 0.12,
     },
   };
 }
