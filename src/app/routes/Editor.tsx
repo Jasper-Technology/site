@@ -316,10 +316,8 @@ export default function Editor() {
       </div>
 
       {/* Bottom Left - Console */}
-      <div className="absolute bottom-6 left-24 z-40 pointer-events-none max-w-md">
-        <div className="pointer-events-auto">
-          <ConsoleDrawer projectId={localProject.projectId} latestRunId={latestRunId} />
-        </div>
+      <div className="absolute bottom-6 left-24 z-40 pointer-events-auto">
+        <ConsoleDrawer projectId={localProject.projectId} latestRunId={latestRunId} />
       </div>
 
     </div>

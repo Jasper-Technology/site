@@ -3,7 +3,7 @@
  *
  * Increases pressure of liquid stream.
  * Calculates power consumption.
- * Extracted from blockSolver.ts lines 369-406
+ * Pumps handle liquid streams - phase should remain liquid.
  */
 
 import type { BlockFunction } from '../../core/schema-v2';
@@ -53,12 +53,18 @@ export const pumpBlock: BlockFunction = (inputs, params, _components) => {
   const efficiency = (params.efficiency as number) ?? 0.75;
   const actualPower = idealWork / efficiency;
 
+  // Pump output is always liquid (pumps are for liquids)
+  // Phase doesn't change significantly with pressure for liquids
   return {
     outputs: {
       out: {
-        ...inlet,
+        T: inlet.T,
         P: outletP,
-        H: inlet.H, // Pumps don't change temperature significantly for liquids
+        flow: inlet.flow,
+        composition: inlet.composition,
+        phase: 'L' as const, // Pump output is liquid
+        vaporFrac: 0, // No vapor in pump output
+        H: inlet.H, // Enthalpy doesn't change significantly for liquid compression
       },
     },
     power: actualPower,

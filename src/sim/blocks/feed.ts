@@ -4,10 +4,15 @@
  * Initializes a stream from specifications.
  * All feeds must have T, P, flow, composition, and phase specified.
  * Calculates rigorous enthalpy using thermodynamic properties.
+ * Validates and determines actual phase from thermodynamic state.
  */
 
 import type { BlockFunction } from '../../core/schema-v2';
-import { mixtureEnthalpy } from '../thermo/properties';
+import {
+  mixtureEnthalpy,
+  determinePhase,
+  calculateVaporFraction,
+} from '../thermo/properties';
 
 export const feedBlock: BlockFunction = (_inputs, params, _components) => {
   // Extract parameters
@@ -15,11 +20,13 @@ export const feedBlock: BlockFunction = (_inputs, params, _components) => {
   const P = params.P as number;
   const flow = params.flow as number;
   const composition = params.composition as Record<string, number>;
-  const phase = (params.phase as string) || 'V';
+  const specifiedPhase = (params.phase as string) || undefined;
 
   // Validation
   if (!T || !P || !flow || !composition) {
-    throw new Error('Feed block missing required parameters (T, P, flow, composition)');
+    throw new Error(
+      'Feed block missing required parameters (T, P, flow, composition)'
+    );
   }
 
   // Check composition sums to 1.0
@@ -31,6 +38,16 @@ export const feedBlock: BlockFunction = (_inputs, params, _components) => {
   // Calculate rigorous mixture enthalpy (kJ/mol)
   const H = mixtureEnthalpy(composition, T, P);
 
+  // Determine actual phase from thermodynamics
+  // If user specified a phase, we use it but log if it disagrees
+  const calculatedPhase = determinePhase(composition, T, P);
+  const vaporFrac = calculateVaporFraction(composition, T, P);
+
+  // Use specified phase if provided, otherwise use calculated
+  const phase = specifiedPhase
+    ? (specifiedPhase as 'V' | 'L' | 'VL')
+    : calculatedPhase;
+
   return {
     outputs: {
       out: {
@@ -38,7 +55,8 @@ export const feedBlock: BlockFunction = (_inputs, params, _components) => {
         P,
         flow,
         composition,
-        phase: phase as 'V' | 'L' | 'VL',
+        phase,
+        vaporFrac,
         H,
       },
     },

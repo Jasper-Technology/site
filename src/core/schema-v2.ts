@@ -92,12 +92,14 @@ export const BlockV2Schema = z.object({
  */
 export type ConnectionV2 = {
   id: string;
+  name?: string; // Stream name (e.g., "S1", "S2") for display
   from: { blockId: string; port: string };
   to: { blockId: string; port: string };
 };
 
 export const ConnectionV2Schema = z.object({
   id: z.string(),
+  name: z.string().optional(),
   from: z.object({
     blockId: z.string(),
     port: z.string(),

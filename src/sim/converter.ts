@@ -188,6 +188,7 @@ function convertPressure(q: { value: number; unit: string }): number {
 function convertConnection(edge: StreamEdge): ConnectionV2 {
   return {
     id: edge.id,
+    name: edge.name, // Preserve stream name (e.g., "S1-Gas", "S2-Water")
     from: {
       blockId: edge.from.nodeId,
       port: edge.from.portName,

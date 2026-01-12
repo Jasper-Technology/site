@@ -3,11 +3,15 @@
  *
  * Cools stream to specified outlet temperature.
  * Calculates cooling duty required using rigorous enthalpy.
- * Extracted from blockSolver.ts lines 411-445
+ * Determines outlet phase based on thermodynamic state.
  */
 
 import type { BlockFunction } from '../../core/schema-v2';
-import { mixtureEnthalpy } from '../thermo/properties';
+import {
+  mixtureEnthalpy,
+  determinePhase,
+  calculateVaporFraction,
+} from '../thermo/properties';
 
 export const coolerBlock: BlockFunction = (inputs, params, _components) => {
   const inlet = inputs.in;
@@ -24,7 +28,9 @@ export const coolerBlock: BlockFunction = (inputs, params, _components) => {
   }
 
   if (outletT >= inlet.T) {
-    throw new Error(`Cooler outlet temperature (${outletT} K) must be less than inlet (${inlet.T} K)`);
+    throw new Error(
+      `Cooler outlet temperature (${outletT} K) must be less than inlet (${inlet.T} K)`
+    );
   }
 
   // Rigorous enthalpy calculations
@@ -36,11 +42,19 @@ export const coolerBlock: BlockFunction = (inputs, params, _components) => {
   // Since H_out < H_in, this will be negative
   const duty = (inlet.flow * (H_out - H_in) * 1000) / 3600; // kW
 
+  // Determine outlet phase based on thermodynamic state
+  const phase = determinePhase(inlet.composition, outletT, inlet.P);
+  const vaporFrac = calculateVaporFraction(inlet.composition, outletT, inlet.P);
+
   return {
     outputs: {
       out: {
-        ...inlet,
         T: outletT,
+        P: inlet.P,
+        flow: inlet.flow,
+        composition: inlet.composition,
+        phase,
+        vaporFrac,
         H: H_out,
       },
     },

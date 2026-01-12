@@ -4,11 +4,15 @@
  * Combines multiple inlet streams.
  * Rigorous mass and energy balance with adiabatic mixing.
  * Uses enthalpy to solve for outlet temperature.
- * Extracted from blockSolver.ts lines 283-332
+ * Determines outlet phase based on thermodynamic state.
  */
 
 import type { BlockFunction } from '../../core/schema-v2';
-import { mixtureEnthalpy } from '../thermo/properties';
+import {
+  mixtureEnthalpy,
+  determinePhase,
+  calculateVaporFraction,
+} from '../thermo/properties';
 
 export const mixerBlock: BlockFunction = (inputs, _params, _components) => {
   const streams = Object.values(inputs);
@@ -96,17 +100,9 @@ export const mixerBlock: BlockFunction = (inputs, _params, _components) => {
     if (T > 1000) T = 1000;
   }
 
-  // Determine output phase (if any stream is two-phase, output is two-phase)
-  let phase: 'V' | 'L' | 'VL' = 'VL';
-  if (streams.some((s) => s.phase === 'VL')) {
-    phase = 'VL';
-  } else if (streams.some((s) => s.phase === 'V') && streams.some((s) => s.phase === 'L')) {
-    phase = 'VL';
-  } else if (streams.every((s) => s.phase === 'V')) {
-    phase = 'V';
-  } else if (streams.every((s) => s.phase === 'L')) {
-    phase = 'L';
-  }
+  // Determine output phase based on thermodynamic state at outlet conditions
+  const phase = determinePhase(composition, T, P);
+  const vaporFrac = calculateVaporFraction(composition, T, P);
 
   return {
     outputs: {
@@ -116,6 +112,7 @@ export const mixerBlock: BlockFunction = (inputs, _params, _components) => {
         flow: totalFlow,
         composition,
         phase,
+        vaporFrac,
         H: H_mix,
       },
     },

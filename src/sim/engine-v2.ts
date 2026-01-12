@@ -322,11 +322,13 @@ function extractKPIs(blocks: BlockV2[]): Record<string, number> {
 /**
  * Build stream results for UI display
  * Converts internal units to UI-friendly units
+ * Uses connection names (S1, S2, etc.) that match diagram labels
  */
 function buildStreamResults(project: ProjectV2): StreamResult[] {
   const streamResults: StreamResult[] = [];
 
-  for (const conn of project.connections) {
+  for (let i = 0; i < project.connections.length; i++) {
+    const conn = project.connections[i];
     const sourceBlock = project.blocks.find((b) => b.id === conn.from.blockId);
     if (!sourceBlock || !sourceBlock.outputs) {
       continue;
@@ -337,10 +339,14 @@ function buildStreamResults(project: ProjectV2): StreamResult[] {
       continue;
     }
 
+    // Use connection name if available, otherwise generate S1, S2, etc.
+    // This matches the stream labels shown on the diagram
+    const streamName = conn.name || `S${i + 1}`;
+
     // Convert units for UI
     streamResults.push({
       id: conn.id,
-      name: `${sourceBlock.name}-${conn.from.port}`,
+      name: streamName,
       T: streamData.T, // Keep in K (UI will convert)
       P: streamData.P / 100000, // Pa -> bar
       flow: streamData.flow,
