@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../data/api';
-import { createBlankTemplate, createDEACO2CaptureTemplate } from '../../data/seed';
+import { createBlankTemplate, createSimpleGasPlantTemplate } from '../../data/seed';
 import { useAuthStore } from '../../store/authStore';
 import { getStorageInfo } from '../../data/storage';
-import { 
-  Plus, 
-  FolderOpen, 
-  Trash2, 
-  Clock, 
+import {
+  Plus,
+  FolderOpen,
+  Trash2,
+  Clock,
   ArrowRight,
   Sparkles,
   FileCode2,
@@ -30,7 +30,7 @@ export default function Dashboard() {
   const { user, setUser } = useAuthStore();
   const { isDark, toggle } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [template, setTemplate] = useState<'blank' | 'dea'>('blank');
+  const [template, setTemplate] = useState<'blank' | 'simple'>('blank');
   const [projectName, setProjectName] = useState('');
   const [storageSize, setStorageSize] = useState<number>(0);
 
@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   const createMutation = useMutation({
     mutationFn: (name: string) => {
-      const templateData = template === 'blank' ? createBlankTemplate() : createDEACO2CaptureTemplate();
+      const templateData = template === 'blank' ? createBlankTemplate() : createSimpleGasPlantTemplate();
       return api.createProject({
         name,
         ...templateData,
@@ -323,8 +323,8 @@ export default function Dashboard() {
                   <button
                     onClick={() => setTemplate('blank')}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      template === 'blank' 
-                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
+                      template === 'blank'
+                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20'
                         : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                     }`}
                   >
@@ -336,22 +336,22 @@ export default function Dashboard() {
                     <div className="font-medium text-slate-800 dark:text-white text-sm">Blank</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Start from scratch</div>
                   </button>
-                  
+
                   <button
-                    onClick={() => setTemplate('dea')}
+                    onClick={() => setTemplate('simple')}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      template === 'dea' 
-                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20' 
+                      template === 'simple'
+                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20'
                         : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                     }`}
                   >
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
-                      template === 'dea' ? 'bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                      template === 'simple' ? 'bg-teal-100 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
                     }`}>
                       <FlaskConical className="w-5 h-5" />
                     </div>
-                    <div className="font-medium text-slate-800 dark:text-white text-sm">CO₂ Capture</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">DEA absorption unit</div>
+                    <div className="font-medium text-slate-800 dark:text-white text-sm">Gas Plant</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Simple gas processing</div>
                   </button>
                 </div>
               </div>

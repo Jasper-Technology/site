@@ -51,11 +51,287 @@ export function createBlankTemplate(): {
 }
 
 /**
- * Complete CO2 Capture Process Template
+ * Simple Gas Processing Plant Template
+ * - Only uses implemented V2 blocks (Feed, Mixer, Heater, Flash, Cooler, Pump, Sink)
  * - Full specifications for all inlet streams
  * - All compositions sum to 1.0
  * - Realistic process parameters
  * - Demonstrates rigorous thermodynamic calculations
+ */
+export function createSimpleGasPlantTemplate(): {
+  thermodynamics: ThermoConfig;
+  components: Component[];
+  flowsheet: FlowsheetGraph;
+  specs: SpecSet;
+  constraints: ConstraintSet;
+  objective: Objective;
+  economics: EconomicConfig;
+} {
+  // Component IDs
+  const co2Id = generateId('comp');
+  const n2Id = generateId('comp');
+  const h2oId = generateId('comp');
+
+  // Define components
+  const components: Component[] = [
+    { id: co2Id, name: 'CO2', formula: 'CO2', role: 'solute' },
+    { id: n2Id, name: 'N2', formula: 'N2', role: 'inert' },
+    { id: h2oId, name: 'H2O', formula: 'H2O', role: 'solvent' },
+  ];
+
+  // Generate block IDs
+  const feed1Id = generateId('node');
+  const feed2Id = generateId('node');
+  const mixerId = generateId('node');
+  const heaterId = generateId('node');
+  const flashId = generateId('node');
+  const coolerId = generateId('node');
+  const pumpId = generateId('node');
+  const sink1Id = generateId('node');
+  const sink2Id = generateId('node');
+
+  // Create blocks
+  const nodes: UnitOpNode[] = [
+    // Feed 1: CO2-rich gas stream
+    {
+      id: feed1Id,
+      type: 'Feed',
+      name: 'Gas Feed',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'V' },
+      ],
+    },
+    // Feed 2: Water stream
+    {
+      id: feed2Id,
+      type: 'Feed',
+      name: 'Water Feed',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+    // Mixer: Combine streams
+    {
+      id: mixerId,
+      type: 'Mixer',
+      name: 'Mixer',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'in1', direction: 'in', phase: 'VL' },
+        { id: generateId('port'), name: 'in2', direction: 'in', phase: 'VL' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'VL' },
+      ],
+    },
+    // Heater: Heat to flash temperature
+    {
+      id: heaterId,
+      type: 'Heater',
+      name: 'Heater',
+      params: {
+        outletT: { kind: 'quantity', q: { value: 350, unit: 'K' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'VL' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'VL' },
+      ],
+    },
+    // Flash: Separate vapor and liquid
+    {
+      id: flashId,
+      type: 'Flash',
+      name: 'Flash Separator',
+      params: {
+        T: { kind: 'quantity', q: { value: 300, unit: 'K' } },
+        P: { kind: 'quantity', q: { value: 2, unit: 'bar' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'VL' },
+        { id: generateId('port'), name: 'vapor', direction: 'out', phase: 'V' },
+        { id: generateId('port'), name: 'liquid', direction: 'out', phase: 'L' },
+      ],
+    },
+    // Cooler: Cool liquid stream
+    {
+      id: coolerId,
+      type: 'Cooler',
+      name: 'Cooler',
+      params: {
+        outletT: { kind: 'quantity', q: { value: 280, unit: 'K' } },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+    // Pump: Increase pressure
+    {
+      id: pumpId,
+      type: 'Pump',
+      name: 'Pump',
+      params: {
+        dP: { kind: 'quantity', q: { value: 1, unit: 'bar' } },
+        efficiency: { kind: 'number', x: 0.75 },
+      },
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+        { id: generateId('port'), name: 'out', direction: 'out', phase: 'L' },
+      ],
+    },
+    // Sink 1: Vapor product
+    {
+      id: sink1Id,
+      type: 'Sink',
+      name: 'Vapor Product',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'V' },
+      ],
+    },
+    // Sink 2: Liquid product
+    {
+      id: sink2Id,
+      type: 'Sink',
+      name: 'Liquid Product',
+      params: {},
+      ports: [
+        { id: generateId('port'), name: 'in', direction: 'in', phase: 'L' },
+      ],
+    },
+  ];
+
+  // Create streams with full specifications
+  const edges: StreamEdge[] = [
+    // Feed 1 → Mixer (Gas stream)
+    {
+      id: generateId('stream'),
+      name: 'S1-Gas',
+      from: { nodeId: feed1Id, portName: 'out' },
+      to: { nodeId: mixerId, portName: 'in1' },
+      spec: {
+        T: { value: 300, unit: 'K' },
+        P: { value: 1.5, unit: 'bar' },
+        flow: { value: 100, unit: 'kmol/h' },
+        composition: {
+          [co2Id]: 0.2,
+          [n2Id]: 0.7,
+          [h2oId]: 0.1,
+        },
+        phase: 'V',
+      },
+    },
+    // Feed 2 → Mixer (Water stream)
+    {
+      id: generateId('stream'),
+      name: 'S2-Water',
+      from: { nodeId: feed2Id, portName: 'out' },
+      to: { nodeId: mixerId, portName: 'in2' },
+      spec: {
+        T: { value: 298, unit: 'K' },
+        P: { value: 1.5, unit: 'bar' },
+        flow: { value: 50, unit: 'kmol/h' },
+        composition: {
+          [co2Id]: 0.0,
+          [n2Id]: 0.0,
+          [h2oId]: 1.0,
+        },
+        phase: 'L',
+      },
+    },
+    // Mixer → Heater
+    {
+      id: generateId('stream'),
+      name: 'S3-Mixed',
+      from: { nodeId: mixerId, portName: 'out' },
+      to: { nodeId: heaterId, portName: 'in' },
+    },
+    // Heater → Flash
+    {
+      id: generateId('stream'),
+      name: 'S4-Heated',
+      from: { nodeId: heaterId, portName: 'out' },
+      to: { nodeId: flashId, portName: 'in' },
+    },
+    // Flash vapor → Sink
+    {
+      id: generateId('stream'),
+      name: 'S5-Vapor',
+      from: { nodeId: flashId, portName: 'vapor' },
+      to: { nodeId: sink1Id, portName: 'in' },
+    },
+    // Flash liquid → Cooler
+    {
+      id: generateId('stream'),
+      name: 'S6-Liquid',
+      from: { nodeId: flashId, portName: 'liquid' },
+      to: { nodeId: coolerId, portName: 'in' },
+    },
+    // Cooler → Pump
+    {
+      id: generateId('stream'),
+      name: 'S7-Cooled',
+      from: { nodeId: coolerId, portName: 'out' },
+      to: { nodeId: pumpId, portName: 'in' },
+    },
+    // Pump → Sink
+    {
+      id: generateId('stream'),
+      name: 'S8-Product',
+      from: { nodeId: pumpId, portName: 'out' },
+      to: { nodeId: sink2Id, portName: 'in' },
+    },
+  ];
+
+  // Layout positions
+  const layout = {
+    nodes: {
+      [feed1Id]: { x: 50, y: 50 },
+      [feed2Id]: { x: 50, y: 200 },
+      [mixerId]: { x: 250, y: 125 },
+      [heaterId]: { x: 450, y: 125 },
+      [flashId]: { x: 650, y: 125 },
+      [coolerId]: { x: 850, y: 200 },
+      [pumpId]: { x: 1050, y: 200 },
+      [sink1Id]: { x: 850, y: 50 },
+      [sink2Id]: { x: 1250, y: 200 },
+    },
+  };
+
+  return {
+    thermodynamics: {
+      propertyMethod: 'NRTL',
+      eos: 'PR',
+    },
+    components,
+    flowsheet: {
+      nodes,
+      edges,
+      layout,
+    },
+    specs: {
+      specs: [],
+    },
+    constraints: {
+      constraints: [],
+    },
+    objective: {
+      metric: 'COM',
+      sense: 'min',
+    },
+    economics: {
+      steamPrice: 10,
+      electricityPrice: 0.1,
+      co2Price: 50,
+      capexFactor: 0.1,
+    },
+  };
+}
+
+/**
+ * DEPRECATED: CO2 Capture Process Template
+ * This template uses unimplemented blocks (Absorber, Stripper, HeatExchanger)
+ * Use createSimpleGasPlantTemplate() instead
  */
 export function createDEACO2CaptureTemplate(): {
   thermodynamics: ThermoConfig;
