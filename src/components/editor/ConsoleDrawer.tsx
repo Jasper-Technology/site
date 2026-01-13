@@ -234,7 +234,7 @@ export default function ConsoleDrawer({
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {(latestRun.rawOutputs.validationErrors as any[]).map(
+                  {((latestRun.rawOutputs?.validationErrors ?? []) as any[]).map(
                     (err, i) => (
                       <div
                         key={i}
