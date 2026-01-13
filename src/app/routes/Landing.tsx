@@ -347,10 +347,18 @@ export default function Landing() {
             
             {/* Right - Form */}
             <form
-              action="https://formspree.io/f/xqeajwgw"
+              name="contact"
               method="POST"
+              data-netlify="true"
+              data-netlify-honeypot="bot-field"
               className="bg-white dark:bg-slate-800/50 rounded-3xl p-6 border border-slate-200 dark:border-slate-700"
             >
+              <input type="hidden" name="form-name" value="contact" />
+              <p className="hidden">
+                <label>
+                  Don't fill this out: <input name="bot-field" />
+                </label>
+              </p>
               <div className="space-y-4">
                 {/* Name & Email - side by side */}
                 <div className="grid grid-cols-2 gap-4">
