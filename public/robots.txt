@@ -1,0 +1,14 @@
+# Robots.txt for Jasper
+# https://jasper.bio
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://jasper.bio/sitemap.xml
+
+# Disallow internal app routes that shouldn't be indexed
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /editor/
+Disallow: /sign-in
