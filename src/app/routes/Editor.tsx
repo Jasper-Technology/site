@@ -50,14 +50,18 @@ export default function Editor() {
     }, 1000);
   }, []);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeout and cache on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      // Clear React Query cache for this project to free memory
+      queryClient.removeQueries({ queryKey: ['project', projectId] });
+      queryClient.removeQueries({ queryKey: ['runs', projectId] });
+      queryClient.removeQueries({ queryKey: ['versions', projectId] });
     };
-  }, []);
+  }, [queryClient, projectId]);
 
   const runMutation = useMutation({
     mutationFn: async (versionId: string) => {

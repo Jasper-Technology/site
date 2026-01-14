@@ -18,39 +18,47 @@ import {
   LogOut,
   User,
   Moon,
-  Sun
+  Sun,
+  Cloud,
+  HardDrive,
+  Crown,
+  Settings,
 } from 'lucide-react';
 import { JasperLogo, useTheme } from './Landing';
 
-const MAX_PROJECTS = 2; // Project limit to manage memory
+const MAX_PROJECTS_FREE = 2;
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, setUser } = useAuthStore();
+  const { user, signOut, isProUser } = useAuthStore();
   const { isDark, toggle } = useTheme();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [template, setTemplate] = useState<'blank' | 'simple'>('blank');
   const [projectName, setProjectName] = useState('');
   const [storageSize, setStorageSize] = useState<number>(0);
+  const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+
+  const isPro = isProUser();
+  const isDemoUser = user?.id.startsWith('demo_');
+  const maxProjects = isPro ? Infinity : MAX_PROJECTS_FREE;
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
     queryFn: () => api.listProjects(),
   });
-  
-  const hasReachedLimit = projects.length >= MAX_PROJECTS;
 
-  // Monitor storage usage
+  const hasReachedLimit = !isPro && projects.length >= maxProjects;
+
   useEffect(() => {
     const updateStorage = () => {
       const { totalSize } = getStorageInfo();
       setStorageSize(totalSize);
     };
-    
+
     updateStorage();
-    const interval = setInterval(updateStorage, 5000); // Update every 5 seconds
-    
+    const interval = setInterval(updateStorage, 5000);
+
     return () => clearInterval(interval);
   }, [projects]);
 
@@ -78,13 +86,17 @@ export default function Dashboard() {
   });
 
   const handleCreate = () => {
-    if (projectName.trim() && !hasReachedLimit) {
+    if (hasReachedLimit) {
+      setShowUpgradePrompt(true);
+      return;
+    }
+    if (projectName.trim()) {
       createMutation.mutate(projectName.trim());
     }
   };
 
-  const handleSignOut = () => {
-    setUser(null as any);
+  const handleSignOut = async () => {
+    await signOut();
     navigate('/signin');
   };
 
@@ -127,8 +139,31 @@ export default function Dashboard() {
             <JasperLogo className="w-8 h-8 text-slate-800 dark:text-white" />
             <span className="text-xl font-semibold text-slate-800 dark:text-white tracking-tight">Jasper</span>
           </Link>
-          
+
           <div className="flex items-center gap-3">
+            {/* Subscription badge */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                isPro
+                  ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300'
+                  : isDemoUser
+                  ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              {isPro ? (
+                <>
+                  <Cloud className="w-3 h-3" />
+                  Pro
+                </>
+              ) : (
+                <>
+                  <HardDrive className="w-3 h-3" />
+                  {isDemoUser ? 'Demo' : 'Free'}
+                </>
+              )}
+            </div>
+
             <button
               onClick={toggle}
               className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -136,13 +171,22 @@ export default function Dashboard() {
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            
+
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
               <div className="w-6 h-6 rounded-full bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center text-teal-600 dark:text-teal-400">
                 <User className="w-3.5 h-3.5" />
               </div>
               <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{user?.name || 'User'}</span>
             </div>
+
+            <Link
+              to="/settings"
+              className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
+
             <button
               onClick={handleSignOut}
               className="p-2.5 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -154,6 +198,46 @@ export default function Dashboard() {
         </div>
       </header>
 
+      {/* Upgrade banner for free users */}
+      {!isPro && !isDemoUser && (
+        <div className="bg-gradient-to-r from-teal-500 to-teal-600 px-6 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3 text-white">
+              <Crown className="w-4 h-4" />
+              <span className="text-sm">
+                Upgrade to Pro for unlimited projects and cloud sync
+              </span>
+            </div>
+            <Link
+              to="/pricing"
+              className="px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-full transition-colors"
+            >
+              View plans
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Demo user banner */}
+      {isDemoUser && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/30 px-6 py-3">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3 text-amber-700 dark:text-amber-300">
+              <HardDrive className="w-4 h-4" />
+              <span className="text-sm">
+                Demo mode: Projects are stored locally only
+              </span>
+            </div>
+            <Link
+              to="/signin"
+              className="px-4 py-1.5 bg-amber-100 dark:bg-amber-800/30 hover:bg-amber-200 dark:hover:bg-amber-800/50 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-full transition-colors"
+            >
+              Sign in to sync
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Hero section */}
@@ -164,21 +248,25 @@ export default function Dashboard() {
             </h1>
             <div className="flex items-center gap-4">
               <p className="text-slate-500 dark:text-slate-400">
-                {hasReachedLimit 
-                  ? `Project limit reached (${projects.length}/${MAX_PROJECTS})`
-                  : 'Design, simulate, and optimize chemical processes'
-                }
+                {hasReachedLimit
+                  ? `Project limit reached (${projects.length}/${MAX_PROJECTS_FREE})`
+                  : 'Design, simulate, and optimize chemical processes'}
               </p>
-              <span className="text-xs text-slate-400 dark:text-slate-500 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800">
-                Storage: {formatBytes(storageSize)}
+              <span className="text-xs text-slate-400 dark:text-slate-500 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center gap-1.5">
+                {isPro ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                {formatBytes(storageSize)}
               </span>
             </div>
           </div>
           <button
-            onClick={() => setShowCreateModal(true)}
-            disabled={hasReachedLimit}
-            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title={hasReachedLimit ? `Maximum ${MAX_PROJECTS} projects allowed` : 'Create a new project'}
+            onClick={() => {
+              if (hasReachedLimit) {
+                setShowUpgradePrompt(true);
+              } else {
+                setShowCreateModal(true);
+              }
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Project
@@ -197,8 +285,7 @@ export default function Dashboard() {
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
-              disabled={hasReachedLimit}
-              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white font-medium rounded-full hover:bg-teal-700 transition-colors"
             >
               <Sparkles className="w-4 h-4" />
               Create your first project
@@ -218,20 +305,33 @@ export default function Dashboard() {
                     <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-600 dark:text-teal-400">
                       <FlaskConical className="w-5 h-5" />
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}>
-                      {statusConfig.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {/* Storage indicator */}
+                      <span
+                        className={`p-1 rounded-md ${
+                          isPro
+                            ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                        }`}
+                        title={isPro ? 'Synced to cloud' : 'Local storage'}
+                      >
+                        {isPro ? <Cloud className="w-3 h-3" /> : <HardDrive className="w-3 h-3" />}
+                      </span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.className}`}>
+                        {statusConfig.label}
+                      </span>
+                    </div>
                   </div>
-                  
+
                   <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-1 truncate group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                     {project.name}
                   </h3>
-                  
+
                   <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mb-4">
                     <Clock className="w-3.5 h-3.5" />
                     {formatDate(project.updatedAt)}
                   </div>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-slate-700">
                     <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                       <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700/50">
@@ -241,7 +341,7 @@ export default function Dashboard() {
                         {project.flowsheet.edges.length} streams
                       </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2">
                       <button
                         onClick={(e) => {
@@ -260,7 +360,7 @@ export default function Dashboard() {
                 </button>
               );
             })}
-            
+
             {/* Quick create card */}
             {!hasReachedLimit && (
               <button
@@ -275,6 +375,24 @@ export default function Dashboard() {
                 </span>
               </button>
             )}
+
+            {/* Upgrade card for free users at limit */}
+            {hasReachedLimit && (
+              <Link
+                to="/pricing"
+                className="rounded-2xl p-5 border-2 border-dashed border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/20 hover:bg-teal-100/50 dark:hover:bg-teal-900/30 transition-all duration-200 flex flex-col items-center justify-center min-h-[200px] group"
+              >
+                <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center mb-3">
+                  <Crown className="w-6 h-6 text-teal-600 dark:text-teal-400" />
+                </div>
+                <span className="text-sm font-medium text-teal-700 dark:text-teal-300 mb-1">
+                  Upgrade to Pro
+                </span>
+                <span className="text-xs text-teal-600 dark:text-teal-400">
+                  Unlimited projects
+                </span>
+              </Link>
+            )}
           </div>
         )}
       </main>
@@ -282,9 +400,9 @@ export default function Dashboard() {
       {/* Create modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div 
-            className="absolute inset-0" 
-            onClick={() => setShowCreateModal(false)} 
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowCreateModal(false)}
           />
           <div className="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             {/* Header */}
@@ -300,7 +418,7 @@ export default function Dashboard() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             {/* Content */}
             <div className="p-6 space-y-6">
               {/* Project name */}
@@ -315,7 +433,7 @@ export default function Dashboard() {
                   autoFocus
                 />
               </div>
-              
+
               {/* Template selection */}
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Template</label>
@@ -355,8 +473,31 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
+
+              {/* Storage indicator */}
+              <div className={`flex items-center gap-3 p-3 rounded-xl ${
+                isPro
+                  ? 'bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-800/30'
+                  : 'bg-slate-50 dark:bg-slate-700/50'
+              }`}>
+                {isPro ? (
+                  <>
+                    <Cloud className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <span className="text-sm text-teal-700 dark:text-teal-300">
+                      Project will sync to cloud automatically
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <HardDrive className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      Project will be stored locally
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
-            
+
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
               <button
@@ -375,6 +516,44 @@ export default function Dashboard() {
               >
                 {createMutation.isPending ? 'Creating...' : 'Create Project'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade prompt modal */}
+      {showUpgradePrompt && (
+        <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div
+            className="absolute inset-0"
+            onClick={() => setShowUpgradePrompt(false)}
+          />
+          <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center mx-auto mb-6">
+                <Crown className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+              </div>
+              <h2 className="text-2xl font-semibold text-slate-800 dark:text-white mb-2">
+                Upgrade to Pro
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-8">
+                You've reached the limit of {MAX_PROJECTS_FREE} projects on the free plan.
+                Upgrade to create unlimited projects with cloud sync.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link
+                  to="/pricing"
+                  className="w-full py-3 px-6 bg-teal-500 text-white font-medium rounded-full hover:bg-teal-600 transition-colors"
+                >
+                  View Pro plans
+                </Link>
+                <button
+                  onClick={() => setShowUpgradePrompt(false)}
+                  className="w-full py-3 px-6 text-slate-600 dark:text-slate-300 font-medium rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Maybe later
+                </button>
+              </div>
             </div>
           </div>
         </div>

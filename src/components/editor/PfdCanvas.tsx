@@ -3,7 +3,7 @@ import type { DragEvent } from 'react';
 import ReactFlow, {
   Background,
   Controls,
-  MiniMap,
+  // MiniMap, // Disabled to reduce memory usage in Safari
   MarkerType,
   BackgroundVariant,
   applyNodeChanges,
@@ -348,13 +348,15 @@ export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanva
           className="!bg-card !border !border-border !rounded-xl !shadow-lg overflow-hidden [&>button]:!bg-card [&>button]:!border-border [&>button]:!text-foreground [&>button:hover]:!bg-muted"
           showInteractive={false}
         />
-        <MiniMap 
+{/* MiniMap disabled to reduce memory usage in Safari
+        <MiniMap
           className="!bg-card !border !border-border !rounded-xl !shadow-lg overflow-hidden"
           nodeColor="hsl(var(--primary))"
           maskColor="hsl(var(--background) / 0.7)"
           pannable
           zoomable
         />
+        */}
       </ReactFlow>
     </div>
   );
