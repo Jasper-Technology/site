@@ -32,13 +32,24 @@ export default function SignIn() {
     setLoading(true);
     setError(null);
     try {
+      // Use jaspertech.org for production, current origin for development
+      const redirectUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? `${window.location.origin}/dashboard`
+        : 'https://jaspertech.org/dashboard';
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
         },
       });
       if (error) throw error;
+      // Note: User will be redirected to Google, then back to jaspertech.org/dashboard
+      // The AuthProvider will handle the session from the URL hash
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
       setLoading(false);
