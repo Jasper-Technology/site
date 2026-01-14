@@ -208,12 +208,11 @@ export default function Dashboard() {
                 Upgrade to Pro for unlimited projects and cloud sync
               </span>
             </div>
-            <Link
-              to="/pricing"
-              className="px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-sm font-medium rounded-full transition-colors"
+            <div
+              className="px-4 py-1.5 bg-white/20 text-white text-sm font-medium rounded-full opacity-50 cursor-not-allowed"
             >
               View plans
-            </Link>
+            </div>
           </div>
         </div>
       )}
@@ -358,9 +357,8 @@ export default function Dashboard() {
 
             {/* Upgrade card for free users at limit */}
             {hasReachedLimit && (
-              <Link
-                to="/pricing"
-                className="rounded-2xl p-5 border-2 border-dashed border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/20 hover:bg-teal-100/50 dark:hover:bg-teal-900/30 transition-all duration-200 flex flex-col items-center justify-center min-h-[200px] group"
+              <div
+                className="rounded-2xl p-5 border-2 border-dashed border-teal-200 dark:border-teal-800 bg-teal-50/50 dark:bg-teal-900/20 flex flex-col items-center justify-center min-h-[200px] opacity-75"
               >
                 <div className="w-12 h-12 rounded-xl bg-teal-100 dark:bg-teal-900/50 flex items-center justify-center mb-3">
                   <Crown className="w-6 h-6 text-teal-600 dark:text-teal-400" />
@@ -371,7 +369,7 @@ export default function Dashboard() {
                 <span className="text-xs text-teal-600 dark:text-teal-400">
                   Unlimited projects
                 </span>
-              </Link>
+              </div>
             )}
           </div>
         )}
@@ -521,12 +519,11 @@ export default function Dashboard() {
                 Upgrade to create unlimited projects with cloud sync.
               </p>
               <div className="flex flex-col gap-3">
-                <Link
-                  to="/pricing"
-                  className="w-full py-3 px-6 bg-teal-500 text-white font-medium rounded-full hover:bg-teal-600 transition-colors"
+                <div
+                  className="w-full py-3 px-6 bg-teal-500/50 text-white font-medium rounded-full opacity-50 cursor-not-allowed"
                 >
                   View Pro plans
-                </Link>
+                </div>
                 <button
                   onClick={() => setShowUpgradePrompt(false)}
                   className="w-full py-3 px-6 text-slate-600 dark:text-slate-300 font-medium rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
