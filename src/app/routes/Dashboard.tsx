@@ -218,26 +218,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Demo user banner */}
-      {isDemoUser && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-100 dark:border-amber-800/30 px-6 py-3">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-3 text-amber-700 dark:text-amber-300">
-              <HardDrive className="w-4 h-4" />
-              <span className="text-sm">
-                Demo mode: Projects are stored locally only
-              </span>
-            </div>
-            <Link
-              to="/signin"
-              className="px-4 py-1.5 bg-amber-100 dark:bg-amber-800/30 hover:bg-amber-200 dark:hover:bg-amber-800/50 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-full transition-colors"
-            >
-              Sign in to sync
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-6 py-10">
         {/* Hero section */}

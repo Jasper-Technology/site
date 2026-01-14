@@ -198,7 +198,7 @@ export default function Landing() {
               to="/dashboard"
               className="px-5 py-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium rounded-full hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
             >
-              Open App
+              Get Started
             </Link>
           </div>
         </div>
