@@ -515,7 +515,7 @@ export default function Landing() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <JasperLogo className="w-5 h-5 text-slate-400 dark:text-slate-500" />
-                <span className="text-sm text-slate-400 dark:text-slate-500">© 2025 JasperTech</span>
+                <span className="text-sm text-slate-400 dark:text-slate-500">© 2026 JasperTech</span>
               </div>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <a
