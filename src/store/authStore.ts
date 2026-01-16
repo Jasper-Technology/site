@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setSession: async (session) => {
     try {
-      if (session?.user) {
+      if (session?.user && supabase) {
         // Fetch or create profile
         const { data: profile, error } = await supabase
           .from('profiles')
@@ -99,14 +99,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     // Go back to demo user after sign out
     set({ session: null, user: initialDemoUser });
   },
 
   loadProfile: async () => {
     const { session } = get();
-    if (!session?.user) return;
+    if (!session?.user || !supabase) return;
 
     const { data: profile } = await supabase
       .from('profiles')

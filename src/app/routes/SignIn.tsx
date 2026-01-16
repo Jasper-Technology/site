@@ -29,6 +29,10 @@ export default function SignIn() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!supabase) {
+      setError('Authentication is not configured. Please use demo mode.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -36,7 +40,7 @@ export default function SignIn() {
       const redirectUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? `${window.location.origin}/dashboard`
         : 'https://jaspertech.org/dashboard';
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -58,6 +62,10 @@ export default function SignIn() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      setError('Authentication is not configured. Please use demo mode.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setMessage(null);
