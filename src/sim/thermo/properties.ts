@@ -1,6 +1,6 @@
 /**
  * Thermodynamic Property Calculations
- * 
+ *
  * This module provides basic thermodynamic property calculations.
  * For production use, integrate with libraries like:
  * - CoolProp (via WASM)
@@ -8,73 +8,56 @@
  * - DWSIM's thermodynamics engine
  */
 
+// Re-export from the expanded component database
+import {
+  COMPONENT_DATABASE as EXPANDED_DATABASE,
+  type ComponentData,
+  getComponentList,
+  getComponentsByCategory,
+  getComponentById,
+  searchComponents,
+} from './componentDatabase';
+
+// Re-export for external use
+export {
+  getComponentList,
+  getComponentsByCategory,
+  getComponentById,
+  searchComponents,
+  type ComponentData,
+};
+
+// Legacy Component interface for backward compatibility
 export interface Component {
   name: string;
-  MW: number;           // Molecular weight (g/mol)
-  Tc: number;           // Critical temperature (K)
-  Pc: number;           // Critical pressure (bar)
-  omega: number;        // Acentric factor
-  Tb: number;           // Normal boiling point (K)
-  Hf: number;           // Heat of formation (kJ/mol)
-  Cp_coef: number[];    // Heat capacity coefficients [a, b, c, d, e] for Cp = a + bT + cT^2 + dT^3 + eT^4
+  MW: number; // Molecular weight (g/mol)
+  Tc: number; // Critical temperature (K)
+  Pc: number; // Critical pressure (bar)
+  omega: number; // Acentric factor
+  Tb: number; // Normal boiling point (K)
+  Hf: number; // Heat of formation (kJ/mol)
+  Cp_coef: number[]; // Heat capacity coefficients [a, b, c, d, e] for Cp = a + bT + cT^2 + dT^3 + eT^4
 }
 
 /**
- * Common component database
- * Data from DIPPR, NIST, and other sources
+ * Component database - now using expanded database with 70+ components
+ * Maintains backward compatibility with existing code
  */
-export const COMPONENT_DATABASE: Record<string, Component> = {
-  'H2O': {
-    name: 'Water',
-    MW: 18.015,
-    Tc: 647.1,
-    Pc: 220.64,
-    omega: 0.345,
-    Tb: 373.15,
-    Hf: -241.8,
-    Cp_coef: [33.46, 0.00688, 7.604e-6, -3.593e-9, 0], // J/mol/K
-  },
-  'CO2': {
-    name: 'Carbon Dioxide',
-    MW: 44.01,
-    Tc: 304.13,
-    Pc: 73.77,
-    omega: 0.228,
-    Tb: 194.65, // sublimation point at 1 atm
-    Hf: -393.5,
-    Cp_coef: [19.8, 0.07344, -5.602e-5, 1.715e-8, 0],
-  },
-  'N2': {
-    name: 'Nitrogen',
-    MW: 28.014,
-    Tc: 126.2,
-    Pc: 33.96,
-    omega: 0.037,
-    Tb: 77.35,
-    Hf: 0.0,
-    Cp_coef: [31.15, -0.01357, 2.680e-5, -1.168e-8, 0],
-  },
-  'O2': {
-    name: 'Oxygen',
-    MW: 31.999,
-    Tc: 154.58,
-    Pc: 50.43,
-    omega: 0.022,
-    Tb: 90.20,
-    Hf: 0.0,
-    Cp_coef: [25.46, 0.01520, -0.7155e-5, 1.312e-9, 0],
-  },
-  'MEA': {
-    name: 'Monoethanolamine',
-    MW: 61.08,
-    Tc: 678.2,
-    Pc: 80.0,
-    omega: 0.545,
-    Tb: 443.15,
-    Hf: -302.5,
-    Cp_coef: [61.5, 0.280, 0, 0, 0], // Simplified
-  },
-};
+export const COMPONENT_DATABASE: Record<string, Component> = Object.fromEntries(
+  Object.entries(EXPANDED_DATABASE).map(([key, data]) => [
+    key,
+    {
+      name: data.name,
+      MW: data.MW,
+      Tc: data.Tc,
+      Pc: data.Pc,
+      omega: data.omega,
+      Tb: data.Tb,
+      Hf: data.Hf,
+      Cp_coef: [...data.Cp_coef],
+    },
+  ])
+);
 
 /**
  * Calculate ideal gas heat capacity (J/mol/K)

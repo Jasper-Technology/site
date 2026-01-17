@@ -15,7 +15,8 @@ export function convertProjectV1toV2(oldProject: JasperProject): ProjectV2 {
   return {
     id: oldProject.projectId,
     name: oldProject.name,
-    components: oldProject.components.map((c) => c.name),
+    // Use component IDs (formula like "H2O") - they match thermo database keys
+    components: oldProject.components.map((c) => c.id),
     blocks: oldProject.flowsheet.nodes.map((node) => convertBlock(node, oldProject)),
     connections: oldProject.flowsheet.edges.map((edge) => convertConnection(edge)),
     thermodynamics: oldProject.thermodynamics,
@@ -54,36 +55,40 @@ function convertParams(
     result[key] = flattenParamValue(value);
   }
 
-  // For Feed blocks, extract stream specs from edges
+  // For Feed blocks, ensure we have T, P, flow, composition
+  // Priority: 1) params on Feed block, 2) edge spec (legacy)
   if (blockType === 'Feed') {
-    const feedEdge = project.flowsheet.edges.find(
-      (e) => e.from.nodeId === nodeId
-    );
+    // If params are already set from the Feed block, use them
+    // (they were already processed above via flattenParamValue)
 
-    if (feedEdge?.spec) {
-      // Convert stream spec to feed params
-      if (feedEdge.spec.T) {
-        result.T = convertTemperature(feedEdge.spec.T);
-      }
-      if (feedEdge.spec.P) {
-        result.P = convertPressure(feedEdge.spec.P);
-      }
-      if (feedEdge.spec.flow) {
-        result.flow = feedEdge.spec.flow.value; // Assume kmol/h
-      }
-      if (feedEdge.spec.composition) {
-        // Convert component IDs to component names
-        const composition: Record<string, number> = {};
-        for (const [compId, fraction] of Object.entries(feedEdge.spec.composition)) {
-          const component = project.components.find((c) => c.id === compId);
-          if (component) {
-            composition[component.name] = fraction;
-          }
+    // Fallback to edge spec for legacy projects
+    if (!result.T || !result.P || !result.flow || !result.composition) {
+      const feedEdge = project.flowsheet.edges.find(
+        (e) => e.from.nodeId === nodeId
+      );
+
+      if (feedEdge?.spec) {
+        // Convert stream spec to feed params (only if not already set)
+        if (!result.T && feedEdge.spec.T) {
+          result.T = convertTemperature(feedEdge.spec.T);
         }
-        result.composition = composition;
-      }
-      if (feedEdge.spec.phase) {
-        result.phase = feedEdge.spec.phase;
+        if (!result.P && feedEdge.spec.P) {
+          result.P = convertPressure(feedEdge.spec.P);
+        }
+        if (!result.flow && feedEdge.spec.flow) {
+          result.flow = feedEdge.spec.flow.value; // Assume kmol/h
+        }
+        if (!result.composition && feedEdge.spec.composition) {
+          // Use component IDs directly - they match thermo database keys (e.g., "H2O", "CO2")
+          const composition: Record<string, number> = {};
+          for (const [compKey, fraction] of Object.entries(feedEdge.spec.composition)) {
+            composition[compKey] = fraction;
+          }
+          result.composition = composition;
+        }
+        if (!result.phase && feedEdge.spec.phase) {
+          result.phase = feedEdge.spec.phase;
+        }
       }
     }
   }
@@ -111,6 +116,9 @@ function flattenParamValue(value: ParamValue): any {
       return value.b;
     case 'enum':
       return value.e;
+    case 'composition':
+      // Return composition object directly - already in the right format
+      return value.comp;
     default:
       return undefined;
   }

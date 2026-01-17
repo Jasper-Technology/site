@@ -9,24 +9,25 @@ import ReactFlow, {
   applyNodeChanges,
   applyEdgeChanges,
 } from 'reactflow';
-import type { 
-  ReactFlowInstance, 
-  Node, 
-  Edge, 
-  Connection, 
+import type {
+  ReactFlowInstance,
+  Node,
+  Edge,
+  Connection,
   XYPosition,
   NodeChange,
   EdgeChange,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { useEditorStore } from '../../store/editorStore';
-import type { FlowsheetGraph, StreamEdge, UnitType } from '../../core/schema';
+import type { FlowsheetGraph, StreamEdge, UnitType, Component } from '../../core/schema';
 import { nodeTypes } from './CustomNodes';
 
 interface PfdCanvasProps {
   graph: FlowsheetGraph;
   onGraphChange: (graph: FlowsheetGraph) => void;
   onDropNode?: (type: UnitType, position: XYPosition) => void;
+  components?: Component[]; // Project components for initializing stream composition
 }
 
 // Convert graph to React Flow format
@@ -93,7 +94,7 @@ function graphToEdges(graph: FlowsheetGraph): Edge[] {
     }));
 }
 
-export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanvasProps) {
+export default function PfdCanvas({ graph, onGraphChange, onDropNode, components = [] }: PfdCanvasProps) {
   const { setSelectedNode, setSelectedStream } = useEditorStore();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
@@ -197,11 +198,24 @@ export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanva
       );
       if (connectionExists) return;
 
+      // Initialize stream spec if this is from a Feed block
+      const isFromFeed = sourceNode.type === 'Feed';
+      const initialSpec = isFromFeed && components.length > 0 ? {
+        T: { value: 25, unit: 'C' },
+        P: { value: 1, unit: 'bar' },
+        flow: { value: 100, unit: 'kmol/h' },
+        // Initialize composition with equal fractions for all components
+        composition: Object.fromEntries(
+          components.map((comp, idx) => [comp.id, idx === 0 ? 1 : 0])
+        ),
+      } : undefined;
+
       const newStreamEdge: StreamEdge = {
         id: `stream_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: `S${graph.edges.length + 1}`,
         from: { nodeId: connection.source, portName: sourcePortName },
         to: { nodeId: connection.target, portName: targetPortName },
+        spec: initialSpec,
       };
 
       // Update graph with new edge
@@ -211,7 +225,7 @@ export default function PfdCanvas({ graph, onGraphChange, onDropNode }: PfdCanva
       };
       onGraphChange(updatedGraph);
     },
-    [graph, onGraphChange]
+    [graph, onGraphChange, components]
   );
 
   // Drag and drop from toolbar

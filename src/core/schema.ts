@@ -17,6 +17,7 @@ export const ParamValueSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('string'), s: z.string() }),
   z.object({ kind: z.literal('boolean'), b: z.boolean() }),
   z.object({ kind: z.literal('enum'), e: z.string() }),
+  z.object({ kind: z.literal('composition'), comp: z.record(z.string(), z.number()) }), // Mole fractions by component ID
 ]);
 export type ParamValue = z.infer<typeof ParamValueSchema>;
 

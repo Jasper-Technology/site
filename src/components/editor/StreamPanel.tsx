@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Info } from 'lucide-react';
+import { Info, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../data/api';
 import type { JasperProject, StreamSpec } from '../../core/schema';
@@ -10,9 +10,10 @@ interface StreamPanelProps {
   streamId: string | null;
   latestRunId: string | null;
   onStreamSelect?: (streamId: string) => void;
+  onOpenComponentPicker?: () => void;
 }
 
-export default function StreamPanel({ project, onProjectChange, streamId, latestRunId, onStreamSelect }: StreamPanelProps) {
+export default function StreamPanel({ project, onProjectChange, streamId, latestRunId, onStreamSelect, onOpenComponentPicker }: StreamPanelProps) {
   const stream = useMemo(
     () => project.flowsheet.edges.find((e) => e.id === streamId),
     [project, streamId]
@@ -329,17 +330,29 @@ export default function StreamPanel({ project, onProjectChange, streamId, latest
         </div>
         
         {components.length === 0 ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-            No components defined in project
-          </p>
+          <div className="space-y-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+              No components defined in project
+            </p>
+            {onOpenComponentPicker && (
+              <button
+                onClick={onOpenComponentPicker}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors w-full justify-center"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Components
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-2">
             {components.map((comp) => {
-              const value = composition[comp.name] || composition[comp.id] || 0;
+              // Use comp.id (formula like "H2O") for composition key - matches thermo database
+              const value = composition[comp.id] || composition[comp.name] || 0;
               return (
                 <div key={comp.id} className="flex items-center space-x-2">
-                  <span className="text-sm text-slate-700 dark:text-slate-300 w-20 truncate" title={comp.name}>
-                    {comp.name}
+                  <span className="text-sm text-slate-700 dark:text-slate-300 w-20 truncate" title={`${comp.name} (${comp.id})`}>
+                    {comp.id}
                   </span>
                   <input
                     type="number"
@@ -347,7 +360,7 @@ export default function StreamPanel({ project, onProjectChange, streamId, latest
                     min="0"
                     max="1"
                     value={value ? value.toFixed(4) : ''}
-                    onChange={(e) => updateComposition(comp.name, parseFloat(e.target.value) || 0)}
+                    onChange={(e) => updateComposition(comp.id, parseFloat(e.target.value) || 0)}
                     className="input-sm flex-1"
                     placeholder="0.0"
                     disabled={!isInputStream}
@@ -355,6 +368,15 @@ export default function StreamPanel({ project, onProjectChange, streamId, latest
                 </div>
               );
             })}
+            {onOpenComponentPicker && isInputStream && (
+              <button
+                onClick={onOpenComponentPicker}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Add more components
+              </button>
+            )}
           </div>
         )}
       </div>

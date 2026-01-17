@@ -10,8 +10,9 @@ import PfdCanvas from '../../components/editor/PfdCanvas';
 import BottomToolbar from '../../components/editor/BottomToolbar';
 import Inspector from '../../components/editor/Inspector';
 import ConsoleDrawer from '../../components/editor/ConsoleDrawer';
+import ComponentPickerModal from '../../components/editor/ComponentPickerModal';
 import { useEditorStore } from '../../store/editorStore';
-import type { JasperProject, UnitType, UnitOpNode, Port, FlowsheetGraph } from '../../core/schema';
+import type { JasperProject, UnitType, UnitOpNode, Port, FlowsheetGraph, Component } from '../../core/schema';
 import type { XYPosition } from 'reactflow';
 import { Loader2 } from 'lucide-react';
 
@@ -24,6 +25,13 @@ export default function Editor() {
   // Local project state for immediate updates
   const [localProject, setLocalProject] = useState<JasperProject | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Component picker modal state
+  const [showComponentPicker, setShowComponentPicker] = useState(false);
+  const [pendingFeedNode, setPendingFeedNode] = useState<{
+    nodeId: string;
+    position: XYPosition;
+  } | null>(null);
 
   // Initial load
   const { data: serverProject, isLoading } = useQuery({
@@ -186,11 +194,18 @@ export default function Editor() {
 
       const nodeId = generateId('node');
       const ports = createPortsForType(type);
-      
-      const defaultPosition = position || { 
-        x: 300 + Math.random() * 100, 
-        y: 200 + Math.random() * 100 
+
+      const defaultPosition = position || {
+        x: 300 + Math.random() * 100,
+        y: 200 + Math.random() * 100,
       };
+
+      // If adding a Feed and no components defined, show the picker first
+      if (type === 'Feed' && (!localProject.components || localProject.components.length === 0)) {
+        setPendingFeedNode({ nodeId, position: defaultPosition });
+        setShowComponentPicker(true);
+        return;
+      }
 
       // Initialize params based on type
       const params: Record<string, any> = {};
@@ -220,7 +235,7 @@ export default function Editor() {
           },
         },
       };
-      
+
       updateProject(updatedProject);
       setSelectedNode(nodeId);
 
@@ -236,6 +251,136 @@ export default function Editor() {
     },
     [localProject, updateProject, createPortsForType, setSelectedNode]
   );
+
+  // Handle component selection from picker modal
+  const handleSelectComponents = useCallback(
+    (components: Component[]) => {
+      if (!localProject) return;
+
+      // Merge new components with existing (avoid duplicates)
+      const existingIds = new Set((localProject.components || []).map(c => c.id));
+      const newComponents = components.filter(c => !existingIds.has(c.id));
+      const allComponents = [...(localProject.components || []), ...newComponents];
+
+      // Update project with selected components
+      const updatedProject: JasperProject = {
+        ...localProject,
+        components: allComponents,
+      };
+
+      // Update existing Feed blocks to include new components in their composition
+      // (only add new components with 0 fraction, don't overwrite existing)
+      updatedProject.flowsheet.nodes = updatedProject.flowsheet.nodes.map(node => {
+        if (node.type === 'Feed') {
+          const compositionParam = node.params.composition as { kind: 'composition'; comp: Record<string, number> } | undefined;
+          const existingComp = compositionParam?.comp || {};
+
+          // Add new components with 0 fraction
+          const updatedComp = { ...existingComp };
+          for (const comp of newComponents) {
+            if (!(comp.id in updatedComp)) {
+              updatedComp[comp.id] = 0;
+            }
+          }
+
+          return {
+            ...node,
+            params: {
+              ...node.params,
+              composition: { kind: 'composition' as const, comp: updatedComp },
+            },
+          };
+        }
+        return node;
+      });
+
+      // If we have a pending feed node, create it now
+      if (pendingFeedNode) {
+        const ports = createPortsForType('Feed');
+
+        // Initialize Feed params with default values and composition for ALL components
+        // The first component gets 100%, rest get 0%
+        const initialComposition: Record<string, number> = {};
+        allComponents.forEach((comp, idx) => {
+          initialComposition[comp.id] = idx === 0 ? 1.0 : 0.0;
+        });
+
+        const newNode: UnitOpNode = {
+          id: pendingFeedNode.nodeId,
+          type: 'Feed',
+          name: `Feed-${updatedProject.flowsheet.nodes.length + 1}`,
+          params: {
+            T: { kind: 'quantity', q: { value: 25, unit: 'C' } },
+            P: { kind: 'quantity', q: { value: 1, unit: 'bar' } },
+            flow: { kind: 'quantity', q: { value: 100, unit: 'kmol/h' } },
+            composition: { kind: 'composition', comp: initialComposition },
+          },
+          ports,
+        };
+
+        updatedProject.flowsheet = {
+          ...updatedProject.flowsheet,
+          nodes: [...updatedProject.flowsheet.nodes, newNode],
+          layout: {
+            ...updatedProject.flowsheet.layout,
+            nodes: {
+              ...updatedProject.flowsheet.layout?.nodes,
+              [pendingFeedNode.nodeId]: {
+                x: pendingFeedNode.position.x,
+                y: pendingFeedNode.position.y,
+              },
+            },
+          },
+        };
+
+        setSelectedNode(pendingFeedNode.nodeId);
+        setPendingFeedNode(null);
+      }
+
+      updateProject(updatedProject);
+      setShowComponentPicker(false);
+    },
+    [localProject, pendingFeedNode, createPortsForType, updateProject, setSelectedNode]
+  );
+
+  // Handle closing component picker without selecting
+  const handleCloseComponentPicker = useCallback(() => {
+    // If user skips, still create the feed node (they can add components later)
+    if (pendingFeedNode && localProject) {
+      const ports = createPortsForType('Feed');
+      const newNode: UnitOpNode = {
+        id: pendingFeedNode.nodeId,
+        type: 'Feed',
+        name: `Feed-${localProject.flowsheet.nodes.length + 1}`,
+        params: {},
+        ports,
+      };
+
+      const updatedProject: JasperProject = {
+        ...localProject,
+        flowsheet: {
+          ...localProject.flowsheet,
+          nodes: [...localProject.flowsheet.nodes, newNode],
+          layout: {
+            ...localProject.flowsheet.layout,
+            nodes: {
+              ...localProject.flowsheet.layout?.nodes,
+              [pendingFeedNode.nodeId]: {
+                x: pendingFeedNode.position.x,
+                y: pendingFeedNode.position.y,
+              },
+            },
+          },
+        },
+      };
+
+      updateProject(updatedProject);
+      setSelectedNode(pendingFeedNode.nodeId);
+    }
+
+    setPendingFeedNode(null);
+    setShowComponentPicker(false);
+  }, [pendingFeedNode, localProject, createPortsForType, updateProject, setSelectedNode]);
 
   const handleRunSimulation = useCallback(() => {
     if (!localProject) return;
@@ -271,6 +416,7 @@ export default function Editor() {
           graph={localProject.flowsheet}
           onGraphChange={handleGraphChange}
           onDropNode={handleAddNode}
+          components={localProject.components}
         />
       </div>
 
@@ -308,6 +454,7 @@ export default function Editor() {
             selectedNodeId={selectedNodeId}
             selectedStreamId={selectedStreamId}
             latestRunId={latestRunId}
+            onOpenComponentPicker={() => setShowComponentPicker(true)}
           />
         </div>
       </div>
@@ -324,6 +471,13 @@ export default function Editor() {
         <ConsoleDrawer projectId={localProject.projectId} latestRunId={latestRunId} />
       </div>
 
+      {/* Component Picker Modal */}
+      <ComponentPickerModal
+        isOpen={showComponentPicker}
+        onClose={handleCloseComponentPicker}
+        onSelectComponents={handleSelectComponents}
+        existingComponents={localProject.components}
+      />
     </div>
   );
 }

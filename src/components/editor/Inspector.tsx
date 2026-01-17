@@ -28,6 +28,7 @@ interface InspectorProps {
   selectedNodeId: string | null;
   selectedStreamId: string | null;
   latestRunId: string | null;
+  onOpenComponentPicker?: () => void;
 }
 
 interface Tab {
@@ -53,6 +54,7 @@ export default function Inspector({
   selectedNodeId,
   selectedStreamId,
   latestRunId,
+  onOpenComponentPicker,
 }: InspectorProps) {
   const { setSelectedStream } = useEditorStore();
   const [activeTab, setActiveTab] = useState('node');
@@ -180,6 +182,7 @@ export default function Inspector({
               project={project}
               onProjectChange={onProjectChange}
               nodeId={selectedNodeId}
+              onOpenComponentPicker={onOpenComponentPicker}
             />
           )}
           {effectiveTab === 'stream' && (
@@ -189,6 +192,7 @@ export default function Inspector({
               streamId={selectedStreamId}
               latestRunId={latestRunId}
               onStreamSelect={(streamId) => setSelectedStream(streamId)}
+              onOpenComponentPicker={onOpenComponentPicker}
             />
           )}
           {effectiveTab === 'specs' && (
