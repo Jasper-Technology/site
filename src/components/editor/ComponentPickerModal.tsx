@@ -240,7 +240,6 @@ export default function ComponentPickerModal({
             </div>
             <div className="flex flex-wrap gap-2">
               {existingComponents.map(comp => {
-                const compData = COMPONENT_DATABASE[comp.id];
                 return (
                   <div
                     key={comp.id}
