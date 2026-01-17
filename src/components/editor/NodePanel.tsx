@@ -238,6 +238,435 @@ export default function NodePanel({ project, onProjectChange, nodeId, onOpenComp
     );
   }
 
+  // Special handling for Pump
+  if (node.type === 'Pump') {
+    const dPParam = node.params.dP as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Pressure Rise (ΔP)</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={dPParam?.q.value ?? 5}
+              onChange={(e) =>
+                updateParam('dP', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: dPParam?.q.unit || 'bar' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={dPParam?.q.unit || 'bar'}
+              onChange={(e) =>
+                updateParam('dP', {
+                  kind: 'quantity',
+                  q: { value: dPParam?.q.value ?? 5, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="bar">bar</option>
+              <option value="Pa">Pa</option>
+              <option value="psi">psi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Compressor
+  if (node.type === 'Compressor') {
+    const outletPParam = node.params.outletP as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    const ratioParam = node.params.ratio as { kind: 'number'; x: number } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Outlet Pressure</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={outletPParam?.q.value ?? 10}
+              onChange={(e) =>
+                updateParam('outletP', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: outletPParam?.q.unit || 'bar' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={outletPParam?.q.unit || 'bar'}
+              onChange={(e) =>
+                updateParam('outletP', {
+                  kind: 'quantity',
+                  q: { value: outletPParam?.q.value ?? 10, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="bar">bar</option>
+              <option value="Pa">Pa</option>
+              <option value="psi">psi</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Compression Ratio (optional)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={ratioParam?.x ?? ''}
+            onChange={(e) =>
+              updateParam('ratio', { kind: 'number', x: parseFloat(e.target.value) || 0 })
+            }
+            className="input"
+            placeholder="Auto-calculated if outlet pressure set"
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Heater/Cooler
+  if (node.type === 'Heater' || node.type === 'Cooler') {
+    const outletTParam = node.params.outletT as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    const dutyParam = node.params.duty as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Outlet Temperature</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={outletTParam?.q.value ?? (node.type === 'Heater' ? 100 : 25)}
+              onChange={(e) =>
+                updateParam('outletT', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: outletTParam?.q.unit || 'C' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={outletTParam?.q.unit || 'C'}
+              onChange={(e) =>
+                updateParam('outletT', {
+                  kind: 'quantity',
+                  q: { value: outletTParam?.q.value ?? (node.type === 'Heater' ? 100 : 25), unit: e.target.value },
+                })
+              }
+              className="input w-20"
+            >
+              <option value="C">°C</option>
+              <option value="K">K</option>
+              <option value="F">°F</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Heat Duty (optional, calculated if outlet T set)</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={dutyParam?.q.value ?? ''}
+              onChange={(e) =>
+                updateParam('duty', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: dutyParam?.q.unit || 'kW' },
+                })
+              }
+              className="input flex-1"
+              placeholder="Auto-calculated"
+            />
+            <select
+              value={dutyParam?.q.unit || 'kW'}
+              onChange={(e) =>
+                updateParam('duty', {
+                  kind: 'quantity',
+                  q: { value: dutyParam?.q.value ?? 0, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="kW">kW</option>
+              <option value="kJ/h">kJ/h</option>
+              <option value="GJ/h">GJ/h</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Absorber/Stripper/Column
+  if (node.type === 'Absorber' || node.type === 'Stripper' || node.type === 'DistillationColumn') {
+    const stagesParam = node.params.stages as { kind: 'int'; n: number } | undefined;
+    const pressureParam = node.params.P as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Number of Stages</label>
+          <input
+            type="number"
+            min="1"
+            value={stagesParam?.n ?? 10}
+            onChange={(e) =>
+              updateParam('stages', { kind: 'int', n: parseInt(e.target.value) || 1 })
+            }
+            className="input"
+          />
+        </div>
+        {(node.type === 'Stripper' || node.type === 'DistillationColumn') && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Operating Pressure</label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="number"
+                value={pressureParam?.q.value ?? 1}
+                onChange={(e) =>
+                  updateParam('P', {
+                    kind: 'quantity',
+                    q: { value: parseFloat(e.target.value) || 0, unit: pressureParam?.q.unit || 'bar' },
+                  })
+                }
+                className="input flex-1"
+              />
+              <select
+                value={pressureParam?.q.unit || 'bar'}
+                onChange={(e) =>
+                  updateParam('P', {
+                    kind: 'quantity',
+                    q: { value: pressureParam?.q.value ?? 1, unit: e.target.value },
+                  })
+                }
+                className="input w-24"
+              >
+                <option value="bar">bar</option>
+                <option value="Pa">Pa</option>
+                <option value="psi">psi</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Special handling for Flash
+  if (node.type === 'Flash') {
+    const TParam = node.params.T as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    const PParam = node.params.P as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Flash Temperature</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={TParam?.q.value ?? 50}
+              onChange={(e) =>
+                updateParam('T', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: TParam?.q.unit || 'C' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={TParam?.q.unit || 'C'}
+              onChange={(e) =>
+                updateParam('T', {
+                  kind: 'quantity',
+                  q: { value: TParam?.q.value ?? 50, unit: e.target.value },
+                })
+              }
+              className="input w-20"
+            >
+              <option value="C">°C</option>
+              <option value="K">K</option>
+              <option value="F">°F</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Flash Pressure</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={PParam?.q.value ?? 1}
+              onChange={(e) =>
+                updateParam('P', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: PParam?.q.unit || 'bar' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={PParam?.q.unit || 'bar'}
+              onChange={(e) =>
+                updateParam('P', {
+                  kind: 'quantity',
+                  q: { value: PParam?.q.value ?? 1, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="bar">bar</option>
+              <option value="Pa">Pa</option>
+              <option value="psi">psi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for HeatExchanger
+  if (node.type === 'HeatExchanger') {
+    const dutyParam = node.params.duty as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Heat Duty</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={dutyParam?.q.value ?? 1000}
+              onChange={(e) =>
+                updateParam('duty', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: dutyParam?.q.unit || 'kW' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={dutyParam?.q.unit || 'kW'}
+              onChange={(e) =>
+                updateParam('duty', {
+                  kind: 'quantity',
+                  q: { value: dutyParam?.q.value ?? 1000, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="kW">kW</option>
+              <option value="kJ/h">kJ/h</option>
+              <option value="GJ/h">GJ/h</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Valve
+  if (node.type === 'Valve') {
+    const dPParam = node.params.dP as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Pressure Drop (ΔP, negative for pressure reduction)</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={dPParam?.q.value ?? -1}
+              onChange={(e) =>
+                updateParam('dP', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: dPParam?.q.unit || 'bar' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={dPParam?.q.unit || 'bar'}
+              onChange={(e) =>
+                updateParam('dP', {
+                  kind: 'quantity',
+                  q: { value: dPParam?.q.value ?? -1, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="bar">bar</option>
+              <option value="Pa">Pa</option>
+              <option value="psi">psi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Generic parameter editor for other unit types
   return (
     <div className="space-y-4">
       <div>
@@ -259,62 +688,104 @@ export default function NodePanel({ project, onProjectChange, nodeId, onOpenComp
 
       <div>
         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Parameters</label>
-        <div className="space-y-2">
-          {Object.entries(node.params).map(([key, param]) => {
-            const typedParam = param as ParamValue;
-            return (
-              <div key={key} className="flex items-center space-x-2">
-                <span className="text-sm text-slate-600 dark:text-slate-400 w-24">{key}:</span>
-                {typedParam.kind === 'quantity' && (
-                  <div className="flex-1 flex items-center space-x-2">
+        {Object.keys(node.params).length === 0 ? (
+          <p className="text-xs text-slate-500 dark:text-slate-400 italic">No parameters defined</p>
+        ) : (
+          <div className="space-y-2">
+            {Object.entries(node.params).map(([key, param]) => {
+              const typedParam = param as ParamValue;
+              return (
+                <div key={key} className="space-y-1">
+                  <label className="text-xs font-medium text-slate-600 dark:text-slate-400">{key}</label>
+                  {typedParam.kind === 'quantity' && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="number"
+                        value={typedParam.q.value}
+                        onChange={(e) =>
+                          updateParam(key, {
+                            kind: 'quantity',
+                            q: { value: parseFloat(e.target.value) || 0, unit: typedParam.q.unit },
+                          })
+                        }
+                        className="flex-1 input-sm"
+                      />
+                      <input
+                        type="text"
+                        value={typedParam.q.unit}
+                        onChange={(e) =>
+                          updateParam(key, {
+                            kind: 'quantity',
+                            q: { value: typedParam.q.value, unit: e.target.value },
+                          })
+                        }
+                        className="w-20 input-sm"
+                        placeholder="unit"
+                      />
+                    </div>
+                  )}
+                  {typedParam.kind === 'number' && (
                     <input
                       type="number"
-                      value={typedParam.q.value}
+                      step="0.01"
+                      value={typedParam.x}
                       onChange={(e) =>
-                        updateParam(key, {
-                          kind: 'quantity',
-                          q: { value: parseFloat(e.target.value) || 0, unit: typedParam.q.unit },
-                        })
+                        updateParam(key, { kind: 'number', x: parseFloat(e.target.value) || 0 })
                       }
-                      className="flex-1 input-sm"
+                      className="w-full input-sm"
                     />
+                  )}
+                  {typedParam.kind === 'int' && (
+                    <input
+                      type="number"
+                      value={typedParam.n}
+                      onChange={(e) =>
+                        updateParam(key, { kind: 'int', n: parseInt(e.target.value) || 0 })
+                      }
+                      className="w-full input-sm"
+                    />
+                  )}
+                  {typedParam.kind === 'string' && (
                     <input
                       type="text"
-                      value={typedParam.q.unit}
+                      value={typedParam.s}
                       onChange={(e) =>
-                        updateParam(key, {
-                          kind: 'quantity',
-                          q: { value: typedParam.q.value, unit: e.target.value },
-                        })
+                        updateParam(key, { kind: 'string', s: e.target.value })
                       }
-                      className="w-20 input-sm"
+                      className="w-full input-sm"
                     />
-                  </div>
-                )}
-                {typedParam.kind === 'number' && (
-                  <input
-                    type="number"
-                    value={typedParam.x}
-                    onChange={(e) =>
-                      updateParam(key, { kind: 'number', x: parseFloat(e.target.value) || 0 })
-                    }
-                    className="flex-1 input-sm"
-                  />
-                )}
-                {typedParam.kind === 'int' && (
-                  <input
-                    type="number"
-                    value={typedParam.n}
-                    onChange={(e) =>
-                      updateParam(key, { kind: 'int', n: parseInt(e.target.value) || 0 })
-                    }
-                    className="flex-1 input-sm"
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
+                  )}
+                  {typedParam.kind === 'boolean' && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={typedParam.b}
+                        onChange={(e) =>
+                          updateParam(key, { kind: 'boolean', b: e.target.checked })
+                        }
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {typedParam.b ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </label>
+                  )}
+                  {typedParam.kind === 'enum' && (
+                    <input
+                      type="text"
+                      value={typedParam.e}
+                      onChange={(e) =>
+                        updateParam(key, { kind: 'enum', e: e.target.value })
+                      }
+                      className="w-full input-sm"
+                      placeholder="enum value"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div>

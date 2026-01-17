@@ -25,8 +25,9 @@ export const flashBlock: BlockFunction = (inputs, params, components) => {
   const T = params.T as number;
   const P = params.P as number;
 
-  if (!T || !P) {
-    throw new Error('Flash missing T or P parameter');
+  // Check if T and P are defined (not undefined/null, but 0 is valid)
+  if (T === undefined || T === null || P === undefined || P === null) {
+    throw new Error(`Flash missing T or P parameter. Got T=${T}, P=${P}`);
   }
 
   // Calculate K-values for VLE

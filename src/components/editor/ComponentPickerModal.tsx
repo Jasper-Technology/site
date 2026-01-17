@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { X, Search, Check, ChevronDown, ChevronRight, Info } from 'lucide-react';
+import { X, Search, Check, ChevronDown, ChevronRight, Info, Trash2 } from 'lucide-react';
 import type { Component } from '../../core/schema';
 import {
   COMPONENT_DATABASE,
@@ -15,6 +15,8 @@ interface ComponentPickerModalProps {
   onClose: () => void;
   onSelectComponents: (components: Component[]) => void;
   existingComponents?: Component[];
+  isNewFeed?: boolean; // If true, don't pre-select existing components
+  onDeleteComponent?: (componentId: string) => void; // Callback to delete a component
 }
 
 export default function ComponentPickerModal({
@@ -22,6 +24,8 @@ export default function ComponentPickerModal({
   onClose,
   onSelectComponents,
   existingComponents = [],
+  isNewFeed = false,
+  onDeleteComponent,
 }: ComponentPickerModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -29,13 +33,19 @@ export default function ComponentPickerModal({
     new Set(CATEGORY_ORDER)
   );
 
-  // Initialize selected IDs from existing components
+  // Initialize selected IDs from existing components (only if not a new Feed)
   useEffect(() => {
     if (isOpen) {
-      const existingIds = new Set(existingComponents.map(c => c.id));
-      setSelectedIds(existingIds);
+      if (isNewFeed) {
+        // For new Feed, start with empty selection
+        setSelectedIds(new Set());
+      } else {
+        // For adding components to project, pre-select existing ones
+        const existingIds = new Set(existingComponents.map(c => c.id));
+        setSelectedIds(existingIds);
+      }
     }
-  }, [isOpen, existingComponents]);
+  }, [isOpen, existingComponents, isNewFeed]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -216,6 +226,49 @@ export default function ComponentPickerModal({
             </span>
           </div>
         </div>
+
+        {/* Existing Components Section */}
+        {existingComponents.length > 0 && !isNewFeed && (
+          <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Project Components
+              </h3>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                {existingComponents.length} component{existingComponents.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {existingComponents.map(comp => {
+                const compData = COMPONENT_DATABASE[comp.id];
+                return (
+                  <div
+                    key={comp.id}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg"
+                  >
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                      {comp.name} ({comp.id})
+                    </span>
+                    {onDeleteComponent && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Remove ${comp.name} from project? This will also remove it from all Feed compositions.`)) {
+                            onDeleteComponent(comp.id);
+                          }
+                        }}
+                        className="p-0.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                        title={`Delete ${comp.name}`}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Component List */}
         <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">

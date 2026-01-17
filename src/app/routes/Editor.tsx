@@ -200,8 +200,8 @@ export default function Editor() {
         y: 200 + Math.random() * 100,
       };
 
-      // If adding a Feed and no components defined, show the picker first
-      if (type === 'Feed' && (!localProject.components || localProject.components.length === 0)) {
+      // If adding a Feed, always show the component picker to select components for this Feed
+      if (type === 'Feed') {
         setPendingFeedNode({ nodeId, position: defaultPosition });
         setShowComponentPicker(true);
         return;
@@ -211,6 +211,21 @@ export default function Editor() {
       const params: Record<string, any> = {};
       if (type === 'TextBox') {
         params.text = { kind: 'string', s: 'Double-click to edit' };
+      } else if (type === 'Pump') {
+        params.dP = { kind: 'quantity', q: { value: 5, unit: 'bar' } };
+      } else if (type === 'Compressor') {
+        params.outletP = { kind: 'quantity', q: { value: 10, unit: 'bar' } };
+      } else if (type === 'Heater' || type === 'Cooler') {
+        params.outletT = { kind: 'quantity', q: { value: type === 'Heater' ? 100 : 25, unit: 'C' } };
+      } else if (type === 'Absorber' || type === 'Stripper' || type === 'DistillationColumn') {
+        params.stages = { kind: 'int', n: 10 };
+      } else if (type === 'Flash') {
+        params.T = { kind: 'quantity', q: { value: 50, unit: 'C' } };
+        params.P = { kind: 'quantity', q: { value: 1, unit: 'bar' } };
+      } else if (type === 'Valve') {
+        params.dP = { kind: 'quantity', q: { value: -1, unit: 'bar' } };
+      } else if (type === 'HeatExchanger') {
+        params.duty = { kind: 'quantity', q: { value: 1000, unit: 'kW' } };
       }
 
       const newNode: UnitOpNode = {
@@ -298,10 +313,10 @@ export default function Editor() {
       if (pendingFeedNode) {
         const ports = createPortsForType('Feed');
 
-        // Initialize Feed params with default values and composition for ALL components
-        // The first component gets 100%, rest get 0%
+        // Initialize Feed params with default values and composition for SELECTED components only
+        // The first selected component gets 100%, rest get 0%
         const initialComposition: Record<string, number> = {};
-        allComponents.forEach((comp, idx) => {
+        components.forEach((comp, idx) => {
           initialComposition[comp.id] = idx === 0 ? 1.0 : 0.0;
         });
 
@@ -341,6 +356,55 @@ export default function Editor() {
       setShowComponentPicker(false);
     },
     [localProject, pendingFeedNode, createPortsForType, updateProject, setSelectedNode]
+  );
+
+  // Handle component deletion
+  const handleDeleteComponent = useCallback(
+    (componentId: string) => {
+      if (!localProject) return;
+
+      // Remove component from project
+      const updatedComponents = (localProject.components || []).filter(c => c.id !== componentId);
+
+      // Remove component from all Feed compositions
+      const updatedProject: JasperProject = {
+        ...localProject,
+        components: updatedComponents,
+        flowsheet: {
+          ...localProject.flowsheet,
+          nodes: localProject.flowsheet.nodes.map(node => {
+            if (node.type === 'Feed') {
+              const compositionParam = node.params.composition as { kind: 'composition'; comp: Record<string, number> } | undefined;
+              const existingComp = compositionParam?.comp || {};
+
+              // Remove deleted component from composition
+              const updatedComp = { ...existingComp };
+              delete updatedComp[componentId];
+
+              // Renormalize if needed
+              const total = Object.values(updatedComp).reduce((sum, val) => sum + val, 0);
+              if (total > 0 && total !== 1.0) {
+                for (const key in updatedComp) {
+                  updatedComp[key] = updatedComp[key] / total;
+                }
+              }
+
+              return {
+                ...node,
+                params: {
+                  ...node.params,
+                  composition: { kind: 'composition' as const, comp: updatedComp },
+                },
+              };
+            }
+            return node;
+          }),
+        },
+      };
+
+      updateProject(updatedProject);
+    },
+    [localProject, updateProject]
   );
 
   // Handle closing component picker without selecting
@@ -477,6 +541,8 @@ export default function Editor() {
         onClose={handleCloseComponentPicker}
         onSelectComponents={handleSelectComponents}
         existingComponents={localProject.components}
+        isNewFeed={!!pendingFeedNode}
+        onDeleteComponent={handleDeleteComponent}
       />
     </div>
   );

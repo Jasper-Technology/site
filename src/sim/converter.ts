@@ -51,8 +51,13 @@ function convertParams(
 ): Record<string, any> {
   const result: Record<string, any> = {};
 
+  // Convert all existing parameters
   for (const [key, value] of Object.entries(params)) {
-    result[key] = flattenParamValue(value);
+    const converted = flattenParamValue(value);
+    // Only set if conversion succeeded (not undefined)
+    if (converted !== undefined) {
+      result[key] = converted;
+    }
   }
 
   // For Feed blocks, ensure we have T, P, flow, composition
@@ -89,6 +94,40 @@ function convertParams(
         if (!result.phase && feedEdge.spec.phase) {
           result.phase = feedEdge.spec.phase;
         }
+      }
+    }
+  }
+
+  // For Flash blocks, ensure we have T and P parameters
+  // If missing or invalid, try to get from inlet stream, otherwise use defaults
+  if (blockType === 'Flash') {
+    // Check if T is missing or invalid (undefined, null, or NaN)
+    if (result.T === undefined || result.T === null || isNaN(result.T)) {
+      // Try to get from inlet stream
+      const inletEdge = project.flowsheet.edges.find(
+        (e) => e.to.nodeId === nodeId
+      );
+
+      if (inletEdge?.spec?.T) {
+        result.T = convertTemperature(inletEdge.spec.T);
+      } else {
+        // Use default (50°C = 323.15K)
+        result.T = 323.15;
+      }
+    }
+
+    // Check if P is missing or invalid (undefined, null, or NaN)
+    if (result.P === undefined || result.P === null || isNaN(result.P)) {
+      // Try to get from inlet stream
+      const inletEdge = project.flowsheet.edges.find(
+        (e) => e.to.nodeId === nodeId
+      );
+
+      if (inletEdge?.spec?.P) {
+        result.P = convertPressure(inletEdge.spec.P);
+      } else {
+        // Use default (1 bar = 1e5 Pa)
+        result.P = 1e5;
       }
     }
   }
