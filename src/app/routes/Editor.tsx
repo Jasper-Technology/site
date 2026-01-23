@@ -226,7 +226,16 @@ export default function Editor() {
         params.dP = { kind: 'quantity', q: { value: -1, unit: 'bar' } };
       } else if (type === 'HeatExchanger') {
         params.duty = { kind: 'quantity', q: { value: 1000, unit: 'kW' } };
+      } else if (type === 'Splitter') {
+        params.splitRatio = { kind: 'number', x: 0.5 };
+      } else if (type === 'Reactor') {
+        params.conversion = { kind: 'number', x: 0.9 };
+        params.T = { kind: 'quantity', q: { value: 200, unit: 'C' } };
+        params.P = { kind: 'quantity', q: { value: 5, unit: 'bar' } };
+      } else if (type === 'Separator') {
+        params.efficiency = { kind: 'number', x: 0.95 };
       }
+      // Mixer and Sink/Product don't need params - they're pass-through units
 
       const newNode: UnitOpNode = {
         id: nodeId,

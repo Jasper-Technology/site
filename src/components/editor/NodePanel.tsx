@@ -666,6 +666,218 @@ export default function NodePanel({ project, onProjectChange, nodeId, onOpenComp
     );
   }
 
+  // Special handling for Splitter
+  if (node.type === 'Splitter') {
+    const splitRatioParam = node.params.splitRatio as { kind: 'number'; x: number } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Split Ratio (fraction to first outlet)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={splitRatioParam?.x ?? 0.5}
+            onChange={(e) =>
+              updateParam('splitRatio', { kind: 'number', x: parseFloat(e.target.value) || 0 })
+            }
+            className="input"
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            0.5 = 50% to each outlet
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Reactor
+  if (node.type === 'Reactor') {
+    const conversionParam = node.params.conversion as { kind: 'number'; x: number } | undefined;
+    const TParam = node.params.T as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    const PParam = node.params.P as { kind: 'quantity'; q: { value: number; unit: string } } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Conversion</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={conversionParam?.x ?? 0.9}
+            onChange={(e) =>
+              updateParam('conversion', { kind: 'number', x: parseFloat(e.target.value) || 0 })
+            }
+            className="input"
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Fraction of limiting reactant converted (0-1)
+          </p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Operating Temperature</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={TParam?.q.value ?? 200}
+              onChange={(e) =>
+                updateParam('T', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: TParam?.q.unit || 'C' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={TParam?.q.unit || 'C'}
+              onChange={(e) =>
+                updateParam('T', {
+                  kind: 'quantity',
+                  q: { value: TParam?.q.value ?? 200, unit: e.target.value },
+                })
+              }
+              className="input w-20"
+            >
+              <option value="C">°C</option>
+              <option value="K">K</option>
+              <option value="F">°F</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Operating Pressure</label>
+          <div className="flex items-center space-x-2">
+            <input
+              type="number"
+              value={PParam?.q.value ?? 5}
+              onChange={(e) =>
+                updateParam('P', {
+                  kind: 'quantity',
+                  q: { value: parseFloat(e.target.value) || 0, unit: PParam?.q.unit || 'bar' },
+                })
+              }
+              className="input flex-1"
+            />
+            <select
+              value={PParam?.q.unit || 'bar'}
+              onChange={(e) =>
+                updateParam('P', {
+                  kind: 'quantity',
+                  q: { value: PParam?.q.value ?? 5, unit: e.target.value },
+                })
+              }
+              className="input w-24"
+            >
+              <option value="bar">bar</option>
+              <option value="Pa">Pa</option>
+              <option value="psi">psi</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Separator
+  if (node.type === 'Separator') {
+    const efficiencyParam = node.params.efficiency as { kind: 'number'; x: number } | undefined;
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Separation Efficiency</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="1"
+            value={efficiencyParam?.x ?? 0.95}
+            onChange={(e) =>
+              updateParam('efficiency', { kind: 'number', x: parseFloat(e.target.value) || 0 })
+            }
+            className="input"
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Fraction of heavy component removed (0-1)
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Mixer (no specific params, just passes through)
+  if (node.type === 'Mixer') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Mixers combine multiple inlet streams into a single outlet stream.
+            The outlet composition is determined by mass balance.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Special handling for Sink/Product (no specific params)
+  if (node.type === 'Sink') {
+    return (
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+          <input
+            type="text"
+            value={node.name}
+            onChange={(e) => updateName(e.target.value)}
+            className="input"
+          />
+        </div>
+        <div className="p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <p className="text-xs text-slate-600 dark:text-slate-400">
+            Product/Sink blocks represent final product streams leaving the process.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Generic parameter editor for other unit types
   return (
     <div className="space-y-4">
