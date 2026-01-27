@@ -1,41 +1,54 @@
-# Website
+# Jasper Documentation
 
-This website is built using [Docusaurus](https://docusaurus.io/), a modern static website generator.
-
-## Installation
-
-```bash
-yarn
-```
+Documentation site for Jasper, built with Docusaurus.
 
 ## Local Development
 
 ```bash
-yarn start
+npm install
+npm start
 ```
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+The site will be available at `http://localhost:3000`.
 
 ## Build
 
 ```bash
-yarn build
+npm run build
 ```
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+This generates static content into the `build` directory.
 
 ## Deployment
 
-Using SSH:
+This site is deployed to Cloudflare Pages at `docs.jaspertech.org`.
+
+### Cloudflare Pages Configuration
+
+**Build Settings:**
+- **Build command:** `cd docs && npm ci && npm run build`
+- **Output directory:** `docs/build`
+- **Root directory:** `/` (root of repository)
+- **Node version:** 20.x
+
+### Manual Deployment
+
+If you need to deploy manually:
 
 ```bash
-USE_SSH=true yarn deploy
+cd docs
+npm ci
+npm run build
+# Then upload the build/ directory to Cloudflare Pages
 ```
 
-Not using SSH:
+## Project Structure
 
-```bash
-GIT_USER=<Your GitHub username> yarn deploy
 ```
-
-If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+docs/
+├── docs/              # Documentation markdown files
+├── src/               # Source files (CSS, etc.)
+├── static/            # Static assets (images, etc.)
+├── docusaurus.config.ts  # Docusaurus configuration
+└── sidebars.ts        # Sidebar navigation structure
+```

@@ -1,0 +1,9 @@
+[build]
+  command = "npm ci && npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Note: This netlify.toml is for building the docs site
+# The main site's _redirects file will handle routing /docs/* to the built docs

@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build:all"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Main app SPA redirect
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Docs site SPA redirect
+[[redirects]]
+  from = "/docs/*"
+  to = "/docs/index.html"
+  status = 200

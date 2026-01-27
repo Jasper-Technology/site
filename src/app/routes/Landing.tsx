@@ -167,9 +167,7 @@ export default function Landing() {
               Features
             </a>
             <a
-              href="https://docs.jaspertech.org"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/docs"
               className="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               Docs

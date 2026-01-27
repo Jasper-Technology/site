@@ -1,1 +1,5 @@
+# Main app SPA redirect
 /*    /index.html   200
+
+# Docs site - serve from /docs subdirectory
+/docs/*    /docs/index.html   200
